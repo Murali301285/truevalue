@@ -1,0 +1,238 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  USER
+}
+
+enum PipelineStatus {
+  LOW
+  NORMAL
+  GOOD
+}
+
+enum TransactionType {
+  INFLOW
+  OUTFLOW
+}
+
+enum RecurrenceFrequency {
+  ONETIME
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+// User (Parent or Founder)
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String?
+  role          Role      @default(USER) // ADMIN or USER
+  image         String?
+  
+  // Security
+  isActive      Boolean   @default(true)
+  
+  // Parent Relations
+  companies     Company[] @relation("ParentCompanies")
+  
+  // Index Config (Per Parent)
+  indexConfig   IndexConfig?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// Configuration for RealSME Index (Dynamic Weights)
+model IndexConfig {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  weightRunway    Int      @default(50)
+  weightSentiment Int      @default(20)
+  weightPipeline  Int      @default(30)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Portfolio Company
+model Company {
+  id            String    @id @default(cuid())
+  
+  // Core Details
+  name          String
+  code          String?   @unique // Company Code
+  description   String?
+  industry      String?   // Area of Business
+  startedOn     DateTime?
+  address       String?
+  
+  // Branding
+  logoUrl       String?
+
+  // Statutory
+  gstNo         String?
+  statutoryDoc  String?   // URL to PDF/Img
+  
+  // Management (Stored as JSON for flexibility: [{ name: "John", designation: "Director" }])
+  management    Json?     @default("[]") 
+  
+  // Parent Ownership
+  parentId      String
+  parent        User      @relation("ParentCompanies", fields: [parentId], references: [id])
+  
+  // Founder Info (For reference/notifications) - Keeping for backwards compat, but 'Management' json handles detailed list
+  founderName   String?
+  founderEmail  String?
+  mobileNumber  String?   // For WhatsApp integration
+  
+  // Data Layers
+  weeklyStats   WeeklyStat[]
+  monthlyStats  MonthlyStat[]
+  transactions  CashTransaction[]
+  
+  // Relations
+  customers     Customer[] @relation("CompanyCustomers")
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// 5.4 Customer Master
+model Customer {
+  id            String    @id @default(cuid())
+  name          String
+  address       String?
+  area          String?
+  
+  // Linked Companies (Many-to-Many: A customer can belong to multiple portfolio companies)
+  companies     Company[] @relation("CompanyCustomers")
+  
+  // Contact Persons (One-to-Many)
+  contacts      CustomerContact[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model CustomerContact {
+  id            String    @id @default(cuid())
+  customerId    String
+  customer      Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  name          String
+  phone         String
+  email         String?
+  designation   String?
+}
+
+// New: detailed Cash Flow Engine
+model CashTransaction {
+  id              String              @id @default(cuid())
+  companyId       String
+  company         Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  type            TransactionType
+  amount          Decimal             @db.Decimal(15, 2)
+  date            DateTime
+  category        String?
+  description     String?
+  
+  // Recurrence
+  isRecurring     Boolean             @default(false)
+  frequency       RecurrenceFrequency @default(ONETIME)
+  
+  // Attachments (JSON array of URLs)
+  attachments     Json?               @default("[]")
+  
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+}
+
+// Layer A: Weekly Health Data
+model WeeklyStat {
+  id              String         @id @default(cuid())
+  companyId       String
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  weekEnding      DateTime
+  
+  cashInflow      Decimal        @db.Decimal(15, 2)
+  cashOutflow     Decimal        @db.Decimal(15, 2)
+  newOrders       Decimal        @db.Decimal(15, 2) @default(0)
+  newCustomers    Int            @default(0)
+  receivables     Decimal        @db.Decimal(15, 2) @default(0)
+  receivablesCollected Decimal   @db.Decimal(15, 2) @default(0)
+  
+  pipelineStatus  PipelineStatus @default(NORMAL)
+  sentiment       Int            @default(5) // 1-10 scale
+  assetUtilisation Int           @default(3) // 1-5 scale
+  
+  majorChallenges String?
+  
+  cashShortageRisk Boolean       @default(false)
+  cashShortageAmount Decimal?    @db.Decimal(15, 2)
+  
+  peopleChanges   Json?          @default("{}") // { newHires: 0, resignations: 0, absenteeism: 0 }
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([companyId, weekEnding])
+}
+
+// Layer B: Monthly Deep Dive
+model MonthlyStat {
+  id              String    @id @default(cuid())
+  companyId       String
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  month           Int       // 1-12
+  year            Int
+  
+  // Aging Debtors (4 buckets)
+  debtors0to30    Decimal   @default(0) @db.Decimal(15, 2)
+  debtors31to60   Decimal   @default(0) @db.Decimal(15, 2)
+  debtors61to90   Decimal   @default(0) @db.Decimal(15, 2)
+  debtors90plus   Decimal   @default(0) @db.Decimal(15, 2)
+
+  // Aging Creditors (4 buckets) -- NEW
+  creditors0to30    Decimal   @default(0) @db.Decimal(15, 2)
+  creditors31to60   Decimal   @default(0) @db.Decimal(15, 2)
+  creditors61to90   Decimal   @default(0) @db.Decimal(15, 2)
+  creditors90plus   Decimal   @default(0) @db.Decimal(15, 2)
+  
+  // Liquidity -- NEW
+  cashOnHand      Decimal   @default(0) @db.Decimal(15, 2)
+  cashAtBank      Decimal   @default(0) @db.Decimal(15, 2)
+  stockValue      Decimal   @default(0) @db.Decimal(15, 2)
+
+  // Expenses -- NEW
+  top5Expenses    Json?     @default("[]") // [{ name: "Rent", amount: 50000 }, ...]
+  
+  // Ops & Growth -- NEW
+  assetCondition  String?   // "Good", "Needs Repair", etc.
+  attendanceAvg   Int?      // Percentage 0-100
+  attendanceNote  String?   // Summary
+  bdActivities    String?   // Rich Text / Textarea
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@unique([companyId, month, year])
+}
