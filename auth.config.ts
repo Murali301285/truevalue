@@ -44,12 +44,14 @@ export const authConfig = {
                 // If standard USER tries to access restricted areas (assuming /config or others are restricted)
                 const isRestrictedPage = nextUrl.pathname.startsWith('/config') || nextUrl.pathname.startsWith('/admin');
 
+                const baseUrl = process.env.AUTH_URL || nextUrl;
+
                 if (isRestrictedPage && userRole !== 'ADMIN') {
-                    return Response.redirect(new URL('/dashboard', nextUrl));
+                    return Response.redirect(new URL('/dashboard', baseUrl));
                 }
 
                 if (isOnLogin) {
-                    return Response.redirect(new URL('/dashboard', nextUrl));
+                    return Response.redirect(new URL('/dashboard', baseUrl));
                 }
 
                 return true;

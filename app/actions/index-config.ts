@@ -14,7 +14,7 @@ export async function getIndexConfig() {
             data: {
                 email: "demo@realsme.com",
                 name: "Demo Parent",
-                role: "PARENT",
+                role: "USER",
                 id: DEMO_USER_ID
             }
         });

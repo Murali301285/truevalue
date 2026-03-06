@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { valuationSchema, ValuationFormData, STEPS } from "./schema";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Step1Tier } from "./steps/step1-tier";
 import { Step1CompanyInfo } from "./steps/step1-company-info";
 import { Step2Financials } from "./steps/step2-financials";
 import { Step3Review } from "./steps/step3-review";
@@ -25,10 +26,22 @@ export function WizardContainer() {
         resolver: zodResolver(valuationSchema) as any,
         mode: "onChange",
         defaultValues: {
+            tier: "express",
             companyName: "",
             industry: "",
             yearsInOperation: 0,
             purpose: "",
+            legalStructure: "",
+            code: "",
+            incorporationDate: "",
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            state: "",
+            pincode: "",
+            pan: "",
+            gstNo: "",
+            cin: "",
             revenue: 0,
             ebitda: 0,
             pat: 0,
@@ -64,8 +77,10 @@ export function WizardContainer() {
     const nextStep = async () => {
         // Validate current step fields
         let valid = false;
-        if (currentStep === 1) valid = await trigger(["companyName", "industry", "yearsInOperation", "purpose"]);
-        if (currentStep === 2) valid = await trigger(["revenue", "ebitda", "pat", "totalAssets", "totalLiabilities"]);
+        if (currentStep === 1) valid = await trigger(["tier"]);
+        if (currentStep === 2) valid = await trigger(["companyName", "industry", "legalStructure", "code", "incorporationDate", "pan", "gstNo", "cin", "addressLine1", "addressLine2", "city", "state", "pincode", "otherIndustry"]);
+
+        if (currentStep === 3) valid = await trigger(["revenue", "ebitda", "pat", "totalAssets", "totalLiabilities", "numberOfEmployees", "yearsInOperation", "purpose", "otherPurpose"]);
 
         if (valid) {
             setDirection(1);
@@ -82,7 +97,7 @@ export function WizardContainer() {
         // Clear draft
         localStorage.removeItem(STORAGE_KEY);
         setDirection(1);
-        setCurrentStep(4);
+        setCurrentStep(5);
     };
 
     // Calculate progress percentage
@@ -118,16 +133,17 @@ export function WizardContainer() {
                             exit={{ x: direction > 0 ? -50 : 50, opacity: 0 }}
                             transition={{ duration: 0.3, ease: "easeInOut" }}
                         >
-                            {currentStep === 1 && <Step1CompanyInfo />}
-                            {currentStep === 2 && <Step2Financials />}
-                            {currentStep === 3 && <Step3Review onPaymentSuccess={handlePaymentSuccess} />}
-                            {currentStep === 4 && <Step4Report />}
+                            {currentStep === 1 && <Step1Tier />}
+                            {currentStep === 2 && <Step1CompanyInfo />}
+                            {currentStep === 3 && <Step2Financials />}
+                            {currentStep === 4 && <Step3Review onPaymentSuccess={handlePaymentSuccess} />}
+                            {currentStep === 5 && <Step4Report />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
 
                 {/* Footer Navigation */}
-                {currentStep < 4 && (
+                {currentStep < 5 && (
                     <div className="flex justify-between items-center py-6 border-t border-gray-100">
                         <Button
                             variant="ghost"
@@ -138,14 +154,14 @@ export function WizardContainer() {
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
 
-                        {currentStep < 3 ? (
+                        {currentStep < 4 ? (
                             <Button
                                 onClick={nextStep}
                                 className="bg-brand-red hover:bg-red-700 text-white min-w-[120px]"
                             >
                                 Next <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
-                        ) : currentStep === 3 ? (
+                        ) : currentStep === 4 ? (
                             // Paid button in Step3 component handles transition
                             <></>
                         ) : null}

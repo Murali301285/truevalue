@@ -132,14 +132,18 @@ export function LoginForm() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-11 border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></svg>
-                    Google
-                </Button>
-                <Button variant="outline" className="h-11 border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="text-blue-600"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" /></svg>
-                    Facebook
+            <div className="grid grid-cols-1 gap-4">
+                <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => {
+                        setEmail("guest@myvalue.com");
+                        setPassword("guest123");
+                        toast({ title: "Guest Credentials Filled", description: "Click Sign In to continue." });
+                    }}
+                    className="h-11 border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                    Login as Guest
                 </Button>
             </div>
         </div>

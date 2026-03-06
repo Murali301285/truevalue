@@ -13,13 +13,13 @@ async function main() {
         where: { email },
         update: {
             password: hashedPassword,
-            role: 'FOUNDER', // or PARENT based on schema enum, defaulting to FOUNDER first
+            role: 'ADMIN',
         },
         create: {
             email,
             name: 'Admin User',
             password: hashedPassword,
-            role: 'FOUNDER',
+            role: 'ADMIN',
         },
     });
 

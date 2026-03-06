@@ -54,6 +54,13 @@ model User {
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  // Profile Fields
+  businessName  String?
+  mobileNumber  String?
+  termsAccepted Boolean   @default(false)
+  dpdpAccepted  Boolean   @default(false)
+  dpdpAcceptedAt DateTime?
 }
 
 // Configuration for RealSME Index (Dynamic Weights)
@@ -87,7 +94,19 @@ model Company {
 
   // Statutory
   gstNo         String?
+  pan           String?
+  cin           String?
   statutoryDoc  String?   // URL to PDF/Img
+  
+  // Detailed Address
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  pincode       String?
+
+  // Legal Structure (e.g. Proprietorship, Partnership, LLP, Pvt Ltd)
+  legalStructure String?
   
   // Management (Stored as JSON for flexibility: [{ name: "John", designation: "Director" }])
   management    Json?     @default("[]") 
