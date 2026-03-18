@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { Role } from "@prisma/client";
 
 // TODO: Replace with actual session fetching when Auth is fully wired
 const DEMO_USER_ID = "demo-parent-id";
@@ -14,7 +15,7 @@ export async function getIndexConfig() {
             data: {
                 email: "demo@realsme.com",
                 name: "Demo Parent",
-                role: "PARENT",
+                role: Role.USER,
                 id: DEMO_USER_ID
             }
         });

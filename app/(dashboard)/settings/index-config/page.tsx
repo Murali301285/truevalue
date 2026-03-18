@@ -1,6 +1,8 @@
 import { getIndexConfig } from "@/app/actions/index-config";
 import { IndexConfigForm } from "@/components/settings/index-config-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function IndexConfigPage() {
     const initialWeights = await getIndexConfig();
 

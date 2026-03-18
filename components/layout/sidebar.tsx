@@ -16,7 +16,8 @@ import {
     Building2,
     ChevronLeft,
     ChevronRight,
-    Calculator
+    Calculator,
+    Percent
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -82,21 +83,15 @@ export function Sidebar({ className }: SidebarProps) {
                             <NavLink href="/config/pricing" icon={<Wallet className="w-4 h-4" />} label="Pricing" collapsed={false} active={pathname.includes("/config/pricing")} />
                             <NavLink href="/config/payment" icon={<Wallet className="w-4 h-4" />} label="Payment" collapsed={false} active={pathname.includes("/config/payment")} />
                             <NavLink href="/config/ai-model" icon={<Calculator className="w-4 h-4" />} label="AI Model" collapsed={false} active={pathname.includes("/config/ai-model")} />
+                            <NavLink href="/config/base-multiplier" icon={<Percent className="w-4 h-4" />} label="Base Multiplier" collapsed={false} active={pathname.includes("/config/base-multiplier")} />
                         </CollapsibleContent>
                     </Collapsible>
-                ) : (
-                    <div className="mt-4 pt-4 border-t border-zinc-100 space-y-1">
-                        <NavLink href="/config/company" icon={<Building2 className="w-4 h-4" />} label="Company" collapsed={true} active={pathname.includes("/config/company")} />
-                        {/* <NavLink href="/config/customer" icon={<Users className="w-4 h-4" />} label="Customer" collapsed={true} active={pathname.includes("/config/customer")} /> */}
-                        <NavLink href="/config/user" icon={<Users className="w-4 h-4" />} label="User" collapsed={true} active={pathname.includes("/config/user")} />
-                        <NavLink href="/settings/index-config" icon={<Calculator className="w-4 h-4" />} label="Score" collapsed={true} active={pathname.includes("/settings/index-config")} />
-                    </div>
-                )}
+                ) : null}
             </div>
 
             {/* Footer Copyright (Only visible when expanded) */}
 
-        </div>
+        </div >
     )
 }
 

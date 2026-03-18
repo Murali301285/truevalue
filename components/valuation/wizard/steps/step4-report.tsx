@@ -9,7 +9,7 @@ import { motion, useAnimation } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-export function Step4Report() {
+export function Step4Report({ valuationId }: { valuationId: string | null }) {
     const { getValues } = useFormContext();
     const values = getValues();
 
@@ -105,16 +105,18 @@ export function Step4Report() {
                 </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-4 pt-8">
+            <Link href={`/report/${valuationId}`} target="_blank">
                 <Button variant="outline" className="border-gray-300">
                     <FileText className="mr-2 h-4 w-4" />
                     Preview Report
                 </Button>
+            </Link>
+            <Link href={`/report/${valuationId}`} target="_blank">
                 <Button className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-brand-red/20">
                     <Download className="mr-2 h-4 w-4" />
                     Download PDF
                 </Button>
-            </div>
+            </Link>
 
             <div className="pt-8 border-t border-gray-200">
                 <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red flex items-center justify-center gap-2">

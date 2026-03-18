@@ -4,22 +4,52 @@ import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/logic";
-import { CreditCard, Lock, CheckCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { CreditCard, Lock, CheckCircle, Zap, FileCheck, ShieldCheck, HelpCircle, Phone, Mail, MessageCircle, ChevronDown, ChevronUp, Send } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: () => void }) {
+import { saveValuation } from "@/app/actions/valuation";
+import { useToast } from "@/components/ui/use-toast";
+
+export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: (id: string) => void }) {
     const { getValues } = useFormContext();
     const values = getValues();
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const handlePayment = () => {
+    const { toast } = useToast();
+
+    const handlePayment = async () => {
         setIsProcessing(true);
+
+        // Calculate estimated value locally for saving (matching logic in step4) or let server do it?
+        // Logic: EV = (EBITDA * 4.5) - (Liabilities - Assets * 0.1)
+        const ebitda = Number(values.ebitda || 0);
+        const liabilities = Number(values.totalLiabilities || 0);
+        const assets = Number(values.totalAssets || 0);
+        let ev = (ebitda * 4.5) - (liabilities - (assets * 0.1));
+        ev = ev > 0 ? ev : 0;
+
+        const payload = {
+            ...values,
+            incorporationDate: values.incorporationDate ? new Date(values.incorporationDate) : null,
+            estimatedValue: ev
+        };
+
         // Simulate payment gateway delay
-        setTimeout(() => {
+        setTimeout(async () => {
+            const result = await saveValuation(payload);
             setIsProcessing(false);
-            onPaymentSuccess();
+
+            if (result.success) {
+                toast({ title: "Success", description: "Payment successful. Generating report..." });
+                onPaymentSuccess(result.id);
+            } else {
+                toast({ title: "Error", description: "Failed to save valuation data.", variant: "destructive" });
+            }
         }, 2000);
     };
 
@@ -69,6 +99,82 @@ export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: () => void
                 </Card>
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                {/* Instant Valuation - Active */}
+                <div className="relative bg-white rounded-xl border-2 border-brand-red/10 shadow-sm p-5 transition-all group overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <Zap className="w-16 h-16 text-brand-red" />
+                    </div>
+                    <div className="flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2.5 bg-red-50 rounded-lg">
+                                <Zap className="w-5 h-5 text-brand-red" />
+                            </div>
+                            <div className="text-right">
+                                <span className="text-xl font-bold text-zinc-900 block">₹499</span>
+                                <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Per Report</span>
+                            </div>
+                        </div>
+                        <div className="mb-6 flex-grow">
+                            <h3 className="font-semibold text-zinc-900 mb-1">Instant Valuation</h3>
+                            <p className="text-xs text-zinc-500 leading-relaxed">Automated enterprise value report with industry benchmarks.</p>
+                        </div>
+
+                        <Button disabled className="w-full bg-brand-red/10 text-brand-red border border-brand-red/20 font-medium">
+                            Current Plan
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Standard Valuation - Coming Soon */}
+                <div className="relative bg-zinc-50 rounded-xl border border-zinc-200 p-5 opacity-70 cursor-not-allowed group hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3">
+                        <span className="bg-zinc-200 text-zinc-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Coming Soon</span>
+                    </div>
+                    <div className="flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2.5 bg-zinc-100 rounded-lg grayscale">
+                                <FileCheck className="w-5 h-5 text-zinc-600" />
+                            </div>
+                            <div className="text-right">
+                                <span className="text-xl font-bold text-zinc-400 block">₹4,999</span>
+                            </div>
+                        </div>
+                        <div className="mb-6 flex-grow">
+                            <h3 className="font-semibold text-zinc-600 mb-1">Standard Tier</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">Includes document upload, OCR data extraction & analyst review.</p>
+                        </div>
+                        <Button variant="outline" disabled className="w-full bg-transparent border-zinc-200 text-zinc-400">
+                            Not Available
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Certified Valuation - Coming Soon */}
+                <div className="relative bg-zinc-50 rounded-xl border border-zinc-200 p-5 opacity-70 cursor-not-allowed group hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3">
+                        <span className="bg-zinc-200 text-zinc-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wide">Coming Soon</span>
+                    </div>
+                    <div className="flex flex-col h-full">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-2.5 bg-zinc-100 rounded-lg grayscale">
+                                <ShieldCheck className="w-5 h-5 text-zinc-600" />
+                            </div>
+                            <div className="text-right">
+                                <span className="text-xl font-bold text-zinc-400 block">₹14,999</span>
+                            </div>
+                        </div>
+                        <div className="mb-6 flex-grow">
+                            <h3 className="font-semibold text-zinc-600 mb-1">Certified Tier</h3>
+                            <p className="text-xs text-zinc-400 leading-relaxed">Comprehensive audit & official certification by analysts.</p>
+                        </div>
+                        <Button variant="outline" disabled className="w-full bg-transparent border-zinc-200 text-zinc-400">
+                            Not Available
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mt-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div>
@@ -93,6 +199,8 @@ export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: () => void
                     </div>
                 </div>
             </div>
+
+
         </motion.div>
     );
 }

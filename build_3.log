@@ -1,0 +1,70 @@
+
+> realsme-portfolio@0.1.0 build
+> next build
+
+▲ Next.js 16.1.4 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 39.7s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Prisma configuration complete. Env: production
+[DEBUG] Prisma configuration complete. Env: production
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Prisma configuration complete. Env: production
+[DEBUG] Prisma configuration complete. Env: production
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Prisma configuration complete. Env: production
+  Generating static pages using 15 workers (0/16) ...
+[DEBUG] Initializing Prisma Client...
+[DEBUG] Creating new PrismaClient instance
+[DEBUG] Prisma configuration complete. Env: production
+  Generating static pages using 15 workers (4/16) 
+prisma:query SELECT "public"."Customer"."id", "public"."Customer"."name", "public"."Customer"."address", "public"."Customer"."area", "public"."Customer"."createdAt", "public"."Customer"."updatedAt" FROM "public"."Customer" WHERE 1=1 ORDER BY "public"."Customer"."createdAt" DESC OFFSET $1
+prisma:query SELECT "public"."Company"."id", "public"."Company"."name", "public"."Company"."code", "public"."Company"."description", "public"."Company"."industry", "public"."Company"."startedOn", "public"."Company"."address", "public"."Company"."logoUrl", "public"."Company"."gstNo", "public"."Company"."pan", "public"."Company"."cin", "public"."Company"."statutoryDoc", "public"."Company"."addressLine1", "public"."Company"."addressLine2", "public"."Company"."city", "public"."Company"."state", "public"."Company"."pincode", "public"."Company"."legalStructure", "public"."Company"."management", "public"."Company"."parentId", "public"."Company"."founderName", "public"."Company"."founderEmail", "public"."Company"."mobileNumber", "public"."Company"."createdAt", "public"."Company"."updatedAt" FROM "public"."Company" WHERE 1=1 ORDER BY "public"."Company"."createdAt" DESC OFFSET $1
+  Generating static pages using 15 workers (8/16) 
+The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+prisma:query SELECT "public"."User"."id", "public"."User"."name", "public"."User"."email", "public"."User"."password", "public"."User"."role"::text, "public"."User"."image", "public"."User"."isActive", "public"."User"."createdAt", "public"."User"."updatedAt", "public"."User"."businessName", "public"."User"."mobileNumber", "public"."User"."termsAccepted", "public"."User"."dpdpAccepted", "public"."User"."dpdpAcceptedAt" FROM "public"."User" WHERE ("public"."User"."email" = $1 AND 1=1) LIMIT $2 OFFSET $3
+  Generating static pages using 15 workers (12/16) 
+prisma:query INSERT INTO "public"."User" ("id","name","email","role","isActive","createdAt","updatedAt","termsAccepted","dpdpAccepted") VALUES ($1,$2,$3,CAST($4::text AS "public"."Role"),$5,$6,$7,$8,$9) RETURNING "public"."User"."id", "public"."User"."name", "public"."User"."email", "public"."User"."password", "public"."User"."role"::text, "public"."User"."image", "public"."User"."isActive", "public"."User"."createdAt", "public"."User"."updatedAt", "public"."User"."businessName", "public"."User"."mobileNumber", "public"."User"."termsAccepted", "public"."User"."dpdpAccepted", "public"."User"."dpdpAcceptedAt"
+prisma:query SELECT "public"."IndexConfig"."id", "public"."IndexConfig"."userId", "public"."IndexConfig"."weightRunway", "public"."IndexConfig"."weightSentiment", "public"."IndexConfig"."weightPipeline", "public"."IndexConfig"."createdAt", "public"."IndexConfig"."updatedAt" FROM "public"."IndexConfig" WHERE ("public"."IndexConfig"."userId" = $1 AND 1=1) LIMIT $2 OFFSET $3
+✓ Generating static pages using 15 workers (16/16) in 2.1s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/[...nextauth]
+├ ○ /calendar
+├ ƒ /company/[id]
+├ ○ /config/company
+├ ○ /config/customer
+├ ○ /config/user
+├ ○ /dashboard
+├ ○ /dashboard/new
+├ ○ /home
+├ ○ /login
+├ ƒ /profile
+├ ○ /reports
+├ ○ /settings/index-config
+└ ○ /weekly-stats
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

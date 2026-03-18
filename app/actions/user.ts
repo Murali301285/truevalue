@@ -94,6 +94,30 @@ export async function deleteUser(id: string) {
 
 import { compare } from "bcryptjs";
 
+export async function getUserProfile(id: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                image: true,
+                role: true,
+                businessName: true,
+                mobileNumber: true,
+                termsAccepted: true,
+                dpdpAccepted: true,
+                dpdpAcceptedAt: true
+            }
+        });
+        if (user) return { success: true, data: user };
+        return { success: false, error: "User not found" };
+    } catch (err) {
+        return { success: false, error: "Failed to fetch user" };
+    }
+}
+
 export async function updateUserProfile(id: string, data: any) {
     try {
         const user = await prisma.user.findUnique({ where: { id } });
@@ -117,7 +141,17 @@ export async function updateUserProfile(id: string, data: any) {
             updateData.image = data.image; // Expecting base64 string or URL
         }
 
-        // Explicitly NOT updating name or email to respect "not user name" request
+        // 3. Profile Setup Update
+        if (data.name !== undefined) updateData.name = data.name;
+        if (data.businessName !== undefined) updateData.businessName = data.businessName;
+        if (data.mobileNumber !== undefined) updateData.mobileNumber = data.mobileNumber;
+        if (data.termsAccepted !== undefined) updateData.termsAccepted = data.termsAccepted;
+        if (data.dpdpAccepted !== undefined) {
+            updateData.dpdpAccepted = data.dpdpAccepted;
+            if (data.dpdpAccepted && !user.dpdpAccepted) {
+                updateData.dpdpAcceptedAt = new Date();
+            }
+        }
 
         await prisma.user.update({
             where: { id },

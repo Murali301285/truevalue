@@ -54,6 +54,13 @@ model User {
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  // Profile Fields
+  businessName  String?
+  mobileNumber  String?
+  termsAccepted Boolean   @default(false)
+  dpdpAccepted  Boolean   @default(false)
+  dpdpAcceptedAt DateTime?
 }
 
 // Configuration for RealSME Index (Dynamic Weights)
@@ -87,7 +94,19 @@ model Company {
 
   // Statutory
   gstNo         String?
+  pan           String?
+  cin           String?
   statutoryDoc  String?   // URL to PDF/Img
+  
+  // Detailed Address
+  addressLine1  String?
+  addressLine2  String?
+  city          String?
+  state         String?
+  pincode       String?
+
+  // Legal Structure (e.g. Proprietorship, Partnership, LLP, Pvt Ltd)
+  legalStructure String?
   
   // Management (Stored as JSON for flexibility: [{ name: "John", designation: "Director" }])
   management    Json?     @default("[]") 
@@ -235,4 +254,100 @@ model MonthlyStat {
   updatedAt       DateTime  @updatedAt
   
   @@unique([companyId, month, year])
+}
+
+// Configuration Masters
+model Industry {
+  id              String           @id @default(cuid())
+  name            String           @unique
+  remarks         String?
+  status          Boolean          @default(true) // Active/Inactive
+  baseMultiplier  BaseMultiplier?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model BaseMultiplier {
+  id                 String   @id @default(cuid())
+  industryId         String   @unique
+  industry           Industry @relation(fields: [industryId], references: [id], onDelete: Cascade)
+  
+  revMultipleFrom    Decimal  @db.Decimal(10, 2)
+  revMultipleTo      Decimal  @db.Decimal(10, 2)
+  ebitdaMultipleFrom Decimal  @db.Decimal(10, 2)
+  ebitdaMultipleTo   Decimal  @db.Decimal(10, 2)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PricingPlan {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., Standard, Certified
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("INR")
+  features    String[] // Array of strings for features
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PaymentConfig {
+  id          String   @id @default(cuid())
+  provider    String   @unique // e.g., "Razorpay", "Stripe"
+  apiKey      String   // Public Key / User Name
+  apiSecret   String   // Secret Key / Password
+  validity    DateTime? // License validity
+  documents   String[] // Array of URLs to submitted documents
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiModelConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique // e.g., "GPT-4", "Claude 3.5"
+  apiKey      String   // Key
+  validity    DateTime?
+  usedFor     String?  // Usage description
+  remarks     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Valuation {
+  id                String   @id @default(cuid())
+  // Company Info
+  companyName       String
+  industry          String
+  legalStructure    String
+  incorporationDate DateTime?
+  
+  // Address
+  addressLine1      String?
+  city              String?
+  state             String?
+  pincode           String?
+  
+  // Tax IDs
+  pan               String?
+  gstNo             String?
+  cin               String?
+  
+  // Financials
+  revenue           Decimal  @db.Decimal(15, 2)
+  ebitda            Decimal  @db.Decimal(15, 2)
+  pat               Decimal  @db.Decimal(15, 2)
+  totalAssets       Decimal  @db.Decimal(15, 2)
+  totalLiabilities  Decimal  @db.Decimal(15, 2)
+  numberOfEmployees Int?
+  yearsInOperation  Int
+  purpose           String
+  
+  // Result
+  estimatedValue    Decimal  @db.Decimal(15, 2)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

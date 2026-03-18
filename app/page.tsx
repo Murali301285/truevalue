@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Check, BarChart, FileText, ArrowRight, Shield, Zap, Lock } from "lucide-react";
+import { Check, BarChart, FileText, ArrowRight, Shield, Zap, Lock, TrendingUp, ClipboardCheck, Search } from "lucide-react";
+import { NotifyMeModal } from "@/components/landing/notify-me-modal";
+import { FeatureCard } from "@/components/landing/feature-card";
+import { HeroSection } from "@/components/landing/hero-section";
 
 export default function LandingPage() {
     return (
@@ -25,28 +28,7 @@ export default function LandingPage() {
             </header>
 
             {/* Hero Section */}
-            <section className="pt-20 pb-16 px-6 text-center max-w-5xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-brand-red text-xs font-bold uppercase tracking-wider mb-6 border border-red-100">
-                    New: AI-Powered Analysis
-                </div>
-                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6 leading-tight">
-                    Professional MSME <br />
-                    Valuations, <span className="relative inline-block">
-                        <span className="relative z-10">Instantly.</span>
-                        <span className="absolute bottom-2 left-0 w-full h-3 bg-red-100 -z-0 transform -rotate-1 rounded-sm"></span>
-                    </span>
-                </h1>
-                <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-                    The fastest way for Indian small businesses to get indicative valuations for loans, investments, or internal planning. Start with our Express Tier today.
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Link href="/login">
-                        <Button size="lg" className="bg-brand-red hover:bg-[#8e161c] text-white h-14 px-8 rounded-full text-lg shadow-xl shadow-red-200 hover:shadow-2xl hover:shadow-red-200 transition-all transform hover:-translate-y-1">
-                            Start Your Valuation <ArrowRight className="ml-2 w-5 h-5" />
-                        </Button>
-                    </Link>
-                </div>
-            </section>
+            <HeroSection />
 
             {/* Features Grid */}
             <section id="features" className="py-20 bg-gray-50 px-6">
@@ -66,15 +48,30 @@ export default function LandingPage() {
                             icon: <Lock className="w-6 h-6 text-brand-red" />,
                             title: "DPDP Compliant",
                             desc: "Enterprise-grade security ensuring your financial data is private and encrypted."
+                        },
+                        {
+                            icon: <TrendingUp className="w-6 h-6 text-brand-red" />,
+                            title: "Financial Analysis",
+                            desc: "Review trends, margins, and anomalies."
+                        },
+                        {
+                            icon: <ClipboardCheck className="w-6 h-6 text-brand-red" />,
+                            title: "Valuation Assumptions",
+                            desc: "Verify sector classification, growth rates, and WACC."
+                        },
+                        {
+                            icon: <Search className="w-6 h-6 text-brand-red" />,
+                            title: "Detailed Ratio Analysis",
+                            desc: "Detailed ratio analysis, and a thorough review of all three valuation methods (DCF, Market, Asset)."
                         }
                     ].map((feature, i) => (
-                        <div key={i} className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center mb-6">
-                                {feature.icon}
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-3">{feature.title}</h3>
-                            <p className="text-gray-500 leading-relaxed">{feature.desc}</p>
-                        </div>
+                        <FeatureCard
+                            key={i}
+                            index={i}
+                            icon={feature.icon}
+                            title={feature.title}
+                            desc={feature.desc}
+                        />
                     ))}
                 </div>
             </section>
@@ -133,21 +130,27 @@ export default function LandingPage() {
                         <ul className="space-y-4 mb-8">
                             {[
                                 "60% Automated",
+                                "Document, OCR Extraction",
                                 "Analyst Verification",
                                 "10-Page Detailed Report",
                                 "Loan Submission Ready"
                             ].map((item) => (
                                 <li key={item} className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-3 h-3 text-gray-400" />
+                                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                        <Check className="w-3 h-3 text-green-600" />
                                     </div>
                                     {item}
                                 </li>
                             ))}
                         </ul>
-                        <Button disabled className="w-full h-12 bg-gray-100 text-gray-400 font-bold rounded-xl">
-                            Notify Me
-                        </Button>
+                        <NotifyMeModal
+                            tier="Standard"
+                            trigger={
+                                <Button className="w-full h-12 bg-gray-100/80 text-gray-500 font-bold rounded-xl hover:bg-gray-200 hover:text-gray-700 transition-all border border-transparent hover:border-gray-300">
+                                    Notify Me
+                                </Button>
+                            }
+                        />
                     </div>
 
                     {/* Certified Plan */}
@@ -171,16 +174,21 @@ export default function LandingPage() {
                                 "Manual Scrutiny"
                             ].map((item) => (
                                 <li key={item} className="flex items-center gap-3 text-gray-600">
-                                    <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                                        <Check className="w-3 h-3 text-gray-400" />
+                                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                        <Check className="w-3 h-3 text-green-600" />
                                     </div>
                                     {item}
                                 </li>
                             ))}
                         </ul>
-                        <Button disabled className="w-full h-12 bg-gray-100 text-gray-400 font-bold rounded-xl">
-                            Notify Me
-                        </Button>
+                        <NotifyMeModal
+                            tier="Certified"
+                            trigger={
+                                <Button className="w-full h-12 bg-gray-100/80 text-gray-500 font-bold rounded-xl hover:bg-gray-200 hover:text-gray-700 transition-all border border-transparent hover:border-gray-300">
+                                    Notify Me
+                                </Button>
+                            }
+                        />
                     </div>
                 </div>
             </section>

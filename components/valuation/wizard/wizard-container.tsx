@@ -20,6 +20,7 @@ export function WizardContainer() {
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(1);
     const [direction, setDirection] = useState(0);
+    const [valuationId, setValuationId] = useState<string | null>(null);
 
     const methods = useForm<ValuationFormData>({
         resolver: zodResolver(valuationSchema) as any,
@@ -29,6 +30,17 @@ export function WizardContainer() {
             industry: "",
             yearsInOperation: 0,
             purpose: "",
+            legalStructure: "",
+            code: "",
+            incorporationDate: "",
+            addressLine1: "",
+            addressLine2: "",
+            city: "",
+            state: "",
+            pincode: "",
+            pan: "",
+            gstNo: "",
+            cin: "",
             revenue: 0,
             ebitda: 0,
             pat: 0,
@@ -64,8 +76,9 @@ export function WizardContainer() {
     const nextStep = async () => {
         // Validate current step fields
         let valid = false;
-        if (currentStep === 1) valid = await trigger(["companyName", "industry", "yearsInOperation", "purpose"]);
-        if (currentStep === 2) valid = await trigger(["revenue", "ebitda", "pat", "totalAssets", "totalLiabilities"]);
+        if (currentStep === 1) valid = await trigger(["companyName", "industry", "legalStructure", "code", "incorporationDate", "pan", "gstNo", "cin", "addressLine1", "addressLine2", "city", "state", "pincode", "otherIndustry"]);
+
+        if (currentStep === 2) valid = await trigger(["revenue", "ebitda", "pat", "totalAssets", "totalLiabilities", "numberOfEmployees", "yearsInOperation", "purpose", "otherPurpose"]);
 
         if (valid) {
             setDirection(1);
@@ -78,9 +91,10 @@ export function WizardContainer() {
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
-    const handlePaymentSuccess = () => {
+    const handlePaymentSuccess = (id: string) => {
         // Clear draft
         localStorage.removeItem(STORAGE_KEY);
+        setValuationId(id);
         setDirection(1);
         setCurrentStep(4);
     };
@@ -121,7 +135,7 @@ export function WizardContainer() {
                             {currentStep === 1 && <Step1CompanyInfo />}
                             {currentStep === 2 && <Step2Financials />}
                             {currentStep === 3 && <Step3Review onPaymentSuccess={handlePaymentSuccess} />}
-                            {currentStep === 4 && <Step4Report />}
+                            {currentStep === 4 && <Step4Report valuationId={valuationId} />}
                         </motion.div>
                     </AnimatePresence>
                 </div>
