@@ -12,7 +12,7 @@ import { saveValuation } from "@/app/actions/valuation";
 import { SimplifiedValuationFormData } from "../schema";
 import { calculateAdvancedValuation } from "@/lib/valuationMath";
 
-export function Step3Review({ onPaymentSuccess, industries }: { onPaymentSuccess: (id: string, calculatedEV: number) => void, industries: any[] }) {
+export function Step4Review({ onPaymentSuccess, industries }: { onPaymentSuccess: (id: string, calculatedEV: number) => void, industries: any[] }) {
     const { getValues } = useFormContext<SimplifiedValuationFormData>();
     const values = getValues();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -31,15 +31,15 @@ export function Step3Review({ onPaymentSuccess, industries }: { onPaymentSuccess
         // Simulate payment gateway delay
         setTimeout(async () => {
             const result = await saveValuation({
-                companyName: "Draft Valuation",
+                companyName: values.companyName || "Draft Valuation",
                 industry: values.sector || "Other",
-                legalStructure: "SME",
+                legalStructure: values.legalStructure || "SME",
                 revenue: Number(values.revenue) || 0,
                 ebitda: Number(values.ebitda) || 0,
                 pat: 0,
-                totalAssets: 0,
-                totalLiabilities: 0,
-                yearsInOperation: values.age === "0-3" ? 2 : values.age === "3-7" ? 5 : 10,
+                totalAssets: Number(values.totalAssets) || 0,
+                totalLiabilities: Number(values.totalLiabilities) || 0,
+                yearsInOperation: (values.age === "0-3" ? 2 : values.age === "3-7" ? 5 : 10),
                 purpose: "Preliminary Estimate",
                 estimatedValue: isNaN(ev) ? 0 : ev,
             });
@@ -79,13 +79,11 @@ export function Step3Review({ onPaymentSuccess, industries }: { onPaymentSuccess
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-2 text-sm">
                             <span className="text-gray-500">Name:</span>
-                            <span className="font-medium text-gray-400 italic">Not Provided</span>
+                            <span className="font-medium">{values.companyName || <span className="text-gray-400 italic">Not Provided</span>}</span>
                             <span className="text-gray-500">Industry:</span>
                             <span className="font-medium">{values.sector}</span>
-                            <span className="text-gray-500">Age:</span>
+                            <span className="text-gray-500">Age Bracket:</span>
                             <span className="font-medium">{values.age} years</span>
-                            <span className="text-gray-500">Purpose:</span>
-                            <span className="font-medium">Business Valuation</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -101,9 +99,9 @@ export function Step3Review({ onPaymentSuccess, industries }: { onPaymentSuccess
                             <span className="text-gray-500">EBITDA:</span>
                             <span className="font-medium">{values.ebitda ? formatCurrency(values.ebitda) : <span className="text-gray-400 italic">N/A</span>}</span>
                             <span className="text-gray-500">Assets:</span>
-                            <span className="font-medium text-gray-400 italic">Not Provided</span>
+                            <span className="font-medium">{values.totalAssets ? formatCurrency(values.totalAssets) : <span className="text-gray-400 italic">Not Provided</span>}</span>
                             <span className="text-gray-500">Liabilities:</span>
-                            <span className="font-medium text-gray-400 italic">Not Provided</span>
+                            <span className="font-medium">{values.totalLiabilities ? formatCurrency(values.totalLiabilities) : <span className="text-gray-400 italic">Not Provided</span>}</span>
                         </div>
                     </CardContent>
                 </Card>

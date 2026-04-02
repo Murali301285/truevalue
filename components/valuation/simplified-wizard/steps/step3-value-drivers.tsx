@@ -87,7 +87,7 @@ function ModernSlider({
     );
 }
 
-export function Step2ValueDrivers() {
+export function Step3ValueDrivers() {
     const { watch, setValue, formState: { errors } } = useFormContext<SimplifiedValuationFormData>();
 
     const revenueGrowth = watch("revenueGrowth");

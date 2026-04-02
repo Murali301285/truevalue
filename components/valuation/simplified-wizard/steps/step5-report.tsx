@@ -8,7 +8,7 @@ import Link from "next/link";
 import { SimplifiedValuationFormData } from "../schema";
 import { calculateAdvancedValuation } from "@/lib/valuationMath";
 
-export function Step4Report({ valuationId, industries }: { valuationId: string | null, industries: any[] }) {
+export function Step5Report({ valuationId, industries }: { valuationId: string | null, industries: any[] }) {
     const { getValues } = useFormContext<SimplifiedValuationFormData>();
     const values = getValues();
     

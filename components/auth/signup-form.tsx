@@ -1,55 +1,52 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
-import { Loader2, KeyRound } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-export function LoginForm() {
+export function SignupForm() {
     const router = useRouter();
     const { toast } = useToast();
+    
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
+    const [mobileNumber, setMobileNumber] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        // ... (rest of logic same) ...
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            console.log("[CLIENT DEBUG] Attempting signIn with:", email);
-            const res = await signIn("credentials", {
-                email,
-                password,
-                redirect: false,
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, mobileNumber, password }),
             });
-            console.log("[CLIENT DEBUG] signIn response:", res);
 
-            if (res?.error) {
-                console.error("[CLIENT DEBUG] Login error:", res.error);
+            const data = await res.json();
+
+            if (!res.ok) {
                 toast({
-                    title: "Access Denied",
-                    description: "Invalid credentials. Please try again.",
+                    title: "Registration Failed",
+                    description: data.message || "Could not create account.",
                     variant: "destructive"
                 });
             } else {
-                console.log("[CLIENT DEBUG] Login success, redirecting...");
                 toast({
-                    title: "Welcome back!",
-                    description: "Logging you in...",
+                    title: "Account Created!",
+                    description: "You can now sign in with your credentials.",
                 });
-                router.push("/dashboard");
-                router.refresh();
+                router.push("/login");
             }
         } catch (error) {
-            console.error("[CLIENT DEBUG] Unexpected error:", error);
+            console.error("Signup error:", error);
             toast({
                 title: "Error",
                 description: "Something went wrong.",
@@ -63,6 +60,24 @@ export function LoginForm() {
     return (
         <div className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name" className="text-gray-700 font-semibold">Full Name</Label>
+                    <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        </div>
+                        <Input
+                            id="name"
+                            type="text"
+                            placeholder="John Doe"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                            className="pl-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
+                        />
+                    </div>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700 font-semibold">Email Address</Label>
                     <div className="relative">
@@ -80,6 +95,25 @@ export function LoginForm() {
                         />
                     </div>
                 </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="mobileNumber" className="text-gray-700 font-semibold">Mobile Number</Label>
+                    <div className="relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        </div>
+                        <Input
+                            id="mobileNumber"
+                            type="tel"
+                            placeholder="+91 98765 43210"
+                            value={mobileNumber}
+                            onChange={(e) => setMobileNumber(e.target.value)}
+                            required
+                            className="pl-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
+                        />
+                    </div>
+                </div>
+                
                 <div className="space-y-2">
                     <Label htmlFor="password" className="text-gray-700 font-semibold">Password</Label>
                     <div className="relative">
@@ -93,6 +127,7 @@ export function LoginForm() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            minLength={6}
                             className="pl-10 pr-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
                         />
                         <button
@@ -109,20 +144,16 @@ export function LoginForm() {
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="remember" className="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" />
-                        <label htmlFor="remember" className="text-gray-500 font-medium">Remember me</label>
-                    </div>
-                    <a href="#" className="font-semibold text-brand-red hover:text-red-700 hover:underline">Forgot password?</a>
+                <div className="flex items-center space-x-2 pt-2 pb-2">
+                    <input type="checkbox" id="terms" required className="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" />
+                    <label htmlFor="terms" className="text-gray-500 font-medium text-sm">I agree to the <a href="/terms" target="_blank" className="text-brand-red hover:underline">Terms & Conditions</a></label>
                 </div>
 
                 <Button type="submit" className="w-full h-11 text-base font-bold bg-[#a81b21] hover:bg-[#8e161c] shadow-lg shadow-red-100" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
+                    Create Account
                 </Button>
             </form>
-
         </div>
     );
 }

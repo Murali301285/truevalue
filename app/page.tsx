@@ -95,7 +95,6 @@ export default function LandingPage() {
                         </div>
                         <ul className="space-y-4 mb-8">
                             {[
-                                "95% Automated",
                                 "Instant Calculation",
                                 "4-Page PDF Report",
                                 "Indicative Use Only"
@@ -129,7 +128,6 @@ export default function LandingPage() {
                         </div>
                         <ul className="space-y-4 mb-8">
                             {[
-                                "60% Automated",
                                 "Document, OCR Extraction",
                                 "Analyst Verification",
                                 "10-Page Detailed Report",
@@ -167,7 +165,6 @@ export default function LandingPage() {
                         </div>
                         <ul className="space-y-4 mb-8">
                             {[
-                                "40% Automated",
                                 "CA/RV Certified",
                                 "Regulatory Compliance",
                                 "Stamp Duty Ready",

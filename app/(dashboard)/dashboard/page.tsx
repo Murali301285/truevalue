@@ -1,12 +1,21 @@
 "use client";
 
-import { ValuationHistory } from "@/components/dashboard/valuation-history";
+import { ValuationHistory, AdminKPICards, UserValuationHistory } from "@/components/dashboard/valuation-history";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { useSession } from "next-auth/react";
 
 export default function DashboardPage() {
+    const { data: session, status } = useSession();
+    const isAdmin = (session?.user as any)?.role === 'ADMIN';
+
+    if (status === "loading") {
+        return <div className="p-6 text-center text-zinc-500 animate-pulse mt-10">Loading Dashboard Data...</div>;
+    }
+
     return (
         <div className="max-w-6xl mx-auto space-y-8 p-6">
 
@@ -16,25 +25,48 @@ export default function DashboardPage() {
                     <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900 mb-1">
                         My Dashboard
                     </h1>
-                    <p className="text-zinc-500">Manage your valuation requests and download reports.</p>
+                    <p className="text-zinc-500">
+                        {isAdmin ? "Admin overview and comprehensive report tracking." : "Manage your valuation requests and download reports."}
+                    </p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <span className="bg-emerald-100 text-emerald-800 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
-                        Active Plan: Free Tier
-                    </span>
-                    <Link href="/dashboard/new">
-                        <Button className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-900/20 transition-all hover:scale-105 active:scale-95">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            New Valuation
-                        </Button>
-                    </Link>
-                </div>
+                
+                {/* Only Users can mint new valuations. Admins only view. */}
+                {!isAdmin && (
+                    <div className="flex items-center gap-4">
+                        <Link href="/dashboard/new">
+                            <motion.div
+                                animate={{ scale: [1, 1.03, 1] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                            >
+                                <Button className="bg-brand-red hover:bg-red-700 text-white shadow-lg shadow-red-900/20 px-8 py-6 text-lg rounded-xl font-bold">
+                                    <PlusCircle className="mr-2 h-5 w-5" />
+                                    New Valuation
+                                </Button>
+                            </motion.div>
+                        </Link>
+                    </div>
+                )}
             </div>
 
-            {/* Valuation History Table */}
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <ValuationHistory />
-            </div>
+            {/* Role Based Content Fork */}
+            {isAdmin ? (
+                <>
+                    {/* Admin KPI Header */}
+                    <AdminKPICards />
+
+                    {/* Admin Hierarchical Valuation History Table */}
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <ValuationHistory />
+                    </div>
+                </>
+            ) : (
+                <>
+                    {/* Standard User Flat History Table */}
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <UserValuationHistory />
+                    </div>
+                </>
+            )}
         </div>
     );
 }

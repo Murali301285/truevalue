@@ -57,7 +57,7 @@ model User {
 
   // Profile Fields
   businessName  String?
-  mobileNumber  String?
+  mobileNumber  String?   @unique
   termsAccepted Boolean   @default(false)
   dpdpAccepted  Boolean   @default(false)
   dpdpAcceptedAt DateTime?
