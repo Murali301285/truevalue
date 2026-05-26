@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle, Building2, MapPin, Receipt, Sparkles, TrendingUp, Calendar, Users, RefreshCw, AlertCircle, ArrowUpRight, DollarSign } from "lucide-react"
+import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle, Building2, MapPin, Receipt, Sparkles, TrendingUp, Calendar, Users, RefreshCw, AlertCircle, ArrowUpRight, DollarSign, Info } from "lucide-react"
 import React, { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
