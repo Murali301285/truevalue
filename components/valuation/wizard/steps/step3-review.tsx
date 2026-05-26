@@ -46,7 +46,7 @@ export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: (id: strin
 
             if (result.success) {
                 toast({ title: "Success", description: "Payment successful. Generating report..." });
-                onPaymentSuccess(result.id);
+                onPaymentSuccess(result.id || "");
             } else {
                 toast({ title: "Error", description: "Failed to save valuation data.", variant: "destructive" });
             }

@@ -11,11 +11,12 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight } from "lucide-react"
+import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle } from "lucide-react"
 import React, { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { motion, AnimatePresence } from "framer-motion"
+import Link from "next/link"
 
 // Helper for consistent date formatting
 const formatDate = (dateString: string | Date) => {
@@ -31,6 +32,23 @@ const formatCurrency = (amount: number) => {
     if (amount >= 100000) return `₹${(amount / 100000).toFixed(2)} L`;
     return `₹${amount.toLocaleString('en-IN')}`;
 }
+
+const mapValuationToRow = (val: any) => {
+    return {
+        id: val.id,
+        date: val.createdAt,
+        companyName: val.companyName,
+        industry: val.industry,
+        userName: val.userEmail || "Client",
+        phone: "N/A",
+        tier: val.purpose === "Express" ? "Instant" : "Certified",
+        status: "Completed",
+        amount: 499,
+        revenue: val.revenue,
+        profit: val.ebitda,
+        downloadUrl: `/report/${val.id}`
+    };
+};
 
 // Augmented Mock Data for Admin
 export const VALUATION_HISTORY = [
@@ -48,15 +66,19 @@ export const VALUATION_HISTORY = [
     { id: "VAL-2026-012", date: "2026-02-21", companyName: "Mu Holdings", industry: "Finance", userName: "Suresh Menon", phone: "+91 8181818181", tier: "Certified", status: "Analyst Review", amount: 14999, revenue: 250000000, profit: 75000000, downloadUrl: null },
 ];
 
-export function AdminKPICards() {
+export function AdminKPICards({ valuations }: { valuations?: any[] }) {
     const stats = useMemo(() => {
-        const totalValuations = VALUATION_HISTORY.length;
-        const totalIndustries = new Set(VALUATION_HISTORY.map(v => v.industry)).size;
-        const totalRevenue = VALUATION_HISTORY.reduce((acc, curr) => acc + curr.revenue, 0);
-        const totalProfit = VALUATION_HISTORY.reduce((acc, curr) => acc + curr.profit, 0);
+        const source = valuations && valuations.length > 0 
+            ? valuations.map(mapValuationToRow)
+            : [...VALUATION_HISTORY];
+
+        const totalValuations = source.length;
+        const totalIndustries = new Set(source.map(v => v.industry)).size;
+        const totalRevenue = source.reduce((acc, curr) => acc + curr.revenue, 0);
+        const totalProfit = source.reduce((acc, curr) => acc + curr.profit, 0);
 
         return { totalValuations, totalIndustries, totalRevenue, totalProfit };
-    }, []);
+    }, [valuations]);
 
     const cards = [
         { label: "Total Valuations", value: stats.totalValuations, tagline: "Generated Reports", bg: "from-blue-50/70 to-white hover:border-blue-200" },
@@ -86,7 +108,7 @@ export function AdminKPICards() {
 }
 
 
-export function ValuationHistory() {
+export function ValuationHistory({ valuations }: { valuations?: any[] }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,7 +116,9 @@ export function ValuationHistory() {
 
     // Grouping by Industry
     const groupedData = useMemo(() => {
-        let result = [...VALUATION_HISTORY];
+        let result = valuations && valuations.length > 0 
+            ? valuations.map(mapValuationToRow)
+            : [...VALUATION_HISTORY];
 
         // Search across Industry or Company Name
         if (searchTerm) {
@@ -120,7 +144,7 @@ export function ValuationHistory() {
             totalProfit: groups[ind].reduce((sum, v) => sum + v.profit, 0),
         }));
 
-    }, [searchTerm]);
+    }, [searchTerm, valuations]);
 
     // Pagination purely on Parent Rows
     const totalPages = itemsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(groupedData.length / itemsPerPage));
@@ -241,7 +265,6 @@ export function ValuationHistory() {
                                                                             <TableCell className="text-xs font-medium text-zinc-700 whitespace-nowrap">{formatDate(child.date)}</TableCell>
                                                                             <TableCell>
                                                                                 <span className="font-semibold text-zinc-900 text-sm block">{child.companyName}</span>
-                                                                                <span className="text-[10px] text-zinc-400 font-mono">{child.id}</span>
                                                                             </TableCell>
                                                                             <TableCell>
                                                                                 <span className="text-sm font-medium text-zinc-800 block">{child.userName}</span>
@@ -261,7 +284,7 @@ export function ValuationHistory() {
                                                                                 <div className="flex items-center justify-center gap-2">
                                                                                     {child.status === 'Completed' && (
                                                                                         <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-brand-red" asChild>
-                                                                                            <a href={child.downloadUrl || "#"} download title="Download Report">
+                                                                                            <a href={child.downloadUrl || "#"} target="_blank" rel="noopener noreferrer" title="View Report">
                                                                                                 <Download className="w-4 h-4" />
                                                                                             </a>
                                                                                         </Button>
@@ -321,13 +344,15 @@ export function ValuationHistory() {
     )
 }
 
-export function UserValuationHistory() {
+export function UserValuationHistory({ valuations }: { valuations?: any[] }) {
     const [searchTerm, setSearchTerm] = useState("");
     const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
     const [currentPage, setCurrentPage] = useState(1);
 
     const filteredData = useMemo(() => {
-        let result = [...VALUATION_HISTORY];
+        let result = valuations && valuations.length > 0 
+            ? valuations.map(mapValuationToRow)
+            : [];
         if (searchTerm) {
             const lowerQuery = searchTerm.toLowerCase();
             result = result.filter(item => 
@@ -336,7 +361,7 @@ export function UserValuationHistory() {
             );
         }
         return result.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [searchTerm]);
+    }, [searchTerm, valuations]);
 
     const totalPages = itemsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -346,6 +371,40 @@ export function UserValuationHistory() {
         const start = (currentPage - 1) * itemsPerPage;
         return filteredData.slice(start, start + itemsPerPage);
     }, [filteredData, currentPage, itemsPerPage]);
+
+    if (valuations && valuations.length === 0 && !searchTerm) {
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="bg-gradient-to-br from-red-50/50 via-white to-zinc-50 border border-red-100 rounded-2xl p-8 md:p-12 text-center shadow-sm relative overflow-hidden flex flex-col items-center justify-center space-y-6"
+            >
+                {/* Visual decorative accents */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-100/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand-red/5 rounded-full blur-3xl" />
+
+                <div className="p-4 bg-red-50 text-brand-red rounded-full border border-red-100 shadow-inner">
+                    <FileText className="w-12 h-12" />
+                </div>
+
+                <div className="max-w-md space-y-2">
+                    <h3 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
+                        Welcome to My Dashboard!
+                    </h3>
+                    <p className="text-zinc-500 text-sm leading-relaxed">
+                        It looks like you haven't created any valuation requests yet. Generate your first report to get started.
+                    </p>
+                </div>
+
+                <Link href="/dashboard/new">
+                    <Button className="bg-brand-red hover:bg-red-700 text-white font-bold px-8 py-6 text-base rounded-xl shadow-lg shadow-red-900/10 transition-transform active:scale-95">
+                        <PlusCircle className="mr-2 h-5 w-5" /> Generate First Report
+                    </Button>
+                </Link>
+            </motion.div>
+        );
+    }
 
     return (
         <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
@@ -398,7 +457,6 @@ export function UserValuationHistory() {
                                     <TableCell className="whitespace-nowrap font-medium text-zinc-700">{formatDate(item.date)}</TableCell>
                                     <TableCell>
                                         <span className="font-semibold text-zinc-900 block">{item.companyName}</span>
-                                        <span className="text-[10px] text-zinc-400 font-mono">{item.id}</span>
                                     </TableCell>
                                     <TableCell className="text-zinc-600">{item.industry}</TableCell>
                                     <TableCell>
@@ -411,7 +469,7 @@ export function UserValuationHistory() {
                                         <div className="flex items-center justify-center gap-2">
                                             {item.status === 'Completed' && (
                                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-brand-red" asChild>
-                                                    <a href={item.downloadUrl || "#"} download title="Download Report">
+                                                    <a href={item.downloadUrl || "#"} target="_blank" rel="noopener noreferrer" title="View Report">
                                                         <Download className="w-4 h-4" />
                                                     </a>
                                                 </Button>
@@ -567,7 +625,7 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
                     {valuation.status === 'Completed' ? (
                         <div className="space-y-3">
                             <Button className="w-full bg-brand-red hover:bg-red-700 text-white gap-2 shadow-lg shadow-red-900/10 h-12" asChild>
-                                <a href={valuation.downloadUrl || "#"} download>
+                                <a href={valuation.downloadUrl || "#"} target="_blank" rel="noopener noreferrer">
                                     <Download className="w-5 h-5" /> Download Report (PDF)
                                 </a>
                             </Button>

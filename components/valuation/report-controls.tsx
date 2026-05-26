@@ -6,7 +6,14 @@ import Link from "next/link";
 
 export function ReportControls() {
     return (
-        <div className="max-w-4xl mx-auto mb-8 flex justify-between items-center print:hidden">
+        <div className="max-w-4xl mx-auto mb-8 flex justify-between items-center print:hidden print-controls">
+            <style dangerouslySetInnerHTML={{ __html: `
+                @media print {
+                    .print-controls, .print\\:hidden, [class*="print:hidden"] {
+                        display: none !important;
+                    }
+                }
+            `}} />
             <Link href="/dashboard" className="text-sm text-zinc-500 hover:text-zinc-900">
                 &larr; Back to Dashboard
             </Link>

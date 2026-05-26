@@ -42,3 +42,9 @@ next-env.d.ts
 
 /lib/generated/prisma
 package_0603.zip
+
+# Custom ignores
+/ready-to-deploy/
+*.zip
+*.rar
+build*.log

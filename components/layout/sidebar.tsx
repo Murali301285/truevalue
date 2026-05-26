@@ -33,6 +33,13 @@ export function Sidebar({ className }: SidebarProps) {
     const pathname = usePathname()
     const [isCollapsed, setIsCollapsed] = React.useState(false)
     const [isConfigOpen, setIsConfigOpen] = React.useState(true)
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
+
+    const showConfig = mounted && !isCollapsed && (session?.user as any)?.role === 'ADMIN'
 
     return (
         <div className={cn("relative border-r bg-white h-full flex flex-col transition-all duration-300", isCollapsed ? "w-16" : "w-64", className)}>
@@ -69,7 +76,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <NavLink href="/reports" icon={<FileBarChart className="w-4 h-4" />} label="Reports" collapsed={isCollapsed} active={pathname === "/reports"} />
 
                 {/* Configuration Group - Admin Only */}
-                {(!isCollapsed && (session?.user as any)?.role === 'ADMIN') ? (
+                {showConfig ? (
                     <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen} className="mt-6">
                         <CollapsibleTrigger asChild>
                             <Button variant="ghost" className="w-full justify-between hover:bg-zinc-50 px-3 h-9 text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-1">
@@ -84,6 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
                             <NavLink href="/config/payment" icon={<Wallet className="w-4 h-4" />} label="Payment" collapsed={false} active={pathname.includes("/config/payment")} />
                             <NavLink href="/config/ai-model" icon={<Calculator className="w-4 h-4" />} label="AI Model" collapsed={false} active={pathname.includes("/config/ai-model")} />
                             <NavLink href="/config/base-multiplier" icon={<Percent className="w-4 h-4" />} label="Base Multiplier" collapsed={false} active={pathname.includes("/config/base-multiplier")} />
+                            <NavLink href="/config/valuation-factors" icon={<Calculator className="w-4 h-4" />} label="Valuation Factors" collapsed={false} active={pathname.includes("/config/valuation-factors")} />
                         </CollapsibleContent>
                     </Collapsible>
                 ) : null}

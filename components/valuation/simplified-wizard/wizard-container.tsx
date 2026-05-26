@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { simplifiedValuationSchema, SimplifiedValuationFormData, STEPS } from "./schema";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Step1CompanyProfile } from "./steps/step1-company-profile";
@@ -12,14 +13,20 @@ import { Step3ValueDrivers } from "./steps/step3-value-drivers";
 import { Step4Review } from "./steps/step4-review";
 import { Step5Report } from "./steps/step5-report";
 import { Step0PlanSelection } from "./steps/step0-plan-selection";
-import { ArrowRight, ArrowLeft, Save } from "lucide-react";
+import { ArrowRight, ArrowLeft, Save, Calculator } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { calculateSimplifiedValuation } from "@/app/actions/valuation";
 
 const STORAGE_KEY = "simplifiedValuationDraft";
 
 export function SimplifiedWizardContainer({ industries = [] }: { industries?: any[] }) {
+    const { data: session } = useSession();
+    const userEmail = session?.user?.email || "guest";
+    const userStorageKey = `${STORAGE_KEY}_${userEmail}`;
+
     const [currentStep, setCurrentStep] = useState(1);
     const [direction, setDirection] = useState(0);
     const [valuationId, setValuationId] = useState<string | null>(null);
@@ -27,6 +34,10 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
     const [hasDraft, setHasDraft] = useState(false);
     const [draftDate, setDraftDate] = useState<string | null>(null);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
+    
+    // States for "View Calculation Math" in Step 5
+    const [breakdown, setBreakdown] = useState<any>(null);
+    const [isLoadingBreakdown, setIsLoadingBreakdown] = useState(false);
     
     const router = useRouter();
     const { toast } = useToast();
@@ -45,9 +56,41 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
 
     const { trigger, getValues, reset } = methods;
 
-    // Check for Draft quietly on Mount
+    // Fetch breakdown when we reach Step 5
     useEffect(() => {
-        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (currentStep === 5) {
+            const fetchBreakdown = async () => {
+                setIsLoadingBreakdown(true);
+                try {
+                    const values = getValues();
+                    const res = await calculateSimplifiedValuation({
+                        sector: values.sector,
+                        age: values.age,
+                        revenue: Number(values.revenue) || 0,
+                        ebitda: Number(values.ebitda) || 0,
+                        revenueGrowth: values.revenueGrowth,
+                        profitMargin: values.profitMargin,
+                        businessStability: values.businessStability,
+                        planName: "Express"
+                    });
+                    if (res.breakdown) {
+                        setBreakdown(res.breakdown);
+                    } else {
+                        setBreakdown("error");
+                    }
+                } catch (err) {
+                    setBreakdown("error");
+                } finally {
+                    setIsLoadingBreakdown(false);
+                }
+            };
+            fetchBreakdown();
+        }
+    }, [currentStep, getValues]);
+
+    // Check for Draft quietly on Mount or User Change
+    useEffect(() => {
+        const savedData = localStorage.getItem(userStorageKey);
         if (savedData) {
             try {
                 const parsed = JSON.parse(savedData);
@@ -59,14 +102,17 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
                     }));
                 }
             } catch (e) {
-                // ignoring invalid json
+                setHasDraft(false);
             }
+        } else {
+            setHasDraft(false);
+            setDraftDate(null);
         }
-    }, []);
+    }, [userStorageKey]);
 
     // Manual Draft Load Hook
     const loadDraft = () => {
-        const savedData = localStorage.getItem(STORAGE_KEY);
+        const savedData = localStorage.getItem(userStorageKey);
         if (savedData) {
             try {
                 const parsed = JSON.parse(savedData);
@@ -86,16 +132,15 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
     // Auto-Save
     useEffect(() => {
         const subscription = methods.watch((value) => {
-            // Check if there's actually meaningful data (to prevent empty starting saves)
             const saveObject = {
                 data: value,
                 timestamp: new Date().toISOString()
             };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(saveObject));
+            localStorage.setItem(userStorageKey, JSON.stringify(saveObject));
             setLastSaved(new Date());
         });
         return () => subscription.unsubscribe();
-    }, [methods]);
+    }, [methods, userStorageKey]);
 
     // Manual Save Draft Hook
     const saveToDraft = () => {
@@ -104,7 +149,7 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
             data: currentData,
             timestamp: new Date().toISOString()
         };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveObject));
+        localStorage.setItem(userStorageKey, JSON.stringify(saveObject));
         toast({ title: "Draft Explicitly Saved", description: "Navigating back to Dashboard." });
         router.push("/dashboard"); 
     };
@@ -163,7 +208,7 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
                     draftDate={draftDate}
                     onLoadDraft={loadDraft} 
                     onClearDraft={() => {
-                        localStorage.removeItem(STORAGE_KEY);
+                        localStorage.removeItem(userStorageKey);
                         setHasDraft(false);
                     }}
                 />
@@ -200,6 +245,91 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
                                 <Button variant="ghost" className="text-brand-red hover:bg-red-50" onClick={saveToDraft}>
                                     <Save className="w-4 h-4 mr-2" /> Save & Exit
                                 </Button>
+                            )}
+                            {currentStep === 5 && (
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-2">
+                                            <Calculator className="w-4 h-4" /> View Calculation Math
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-xl font-bold text-gray-900 border-b pb-4 mb-4 flex items-center gap-2">
+                                                <Calculator className="w-5 h-5 text-brand-red" /> Valuation Calculation Breakdown
+                                            </DialogTitle>
+                                        </DialogHeader>
+                                        
+                                        {breakdown ? (
+                                            <div className="space-y-6 text-sm">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-gray-900">STEP 1 – Identify Metric</h4>
+                                                    <p className="text-gray-600">Metric Type = <strong>{breakdown.metric}</strong></p>
+                                                    <p className="text-gray-600">Metric Value = <strong>{breakdown.metricValue >= 10000000 ? `₹${(breakdown.metricValue / 10000000).toFixed(2)} Cr` : breakdown.metricValue >= 100000 ? `₹${(breakdown.metricValue / 100000).toFixed(2)} L` : `₹${breakdown.metricValue.toLocaleString('en-IN')}`}</strong></p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-gray-900">STEP 2 – Base Multiple</h4>
+                                                    <p className="text-gray-600">Base Multiple = <strong>{breakdown.baseMultiple}x</strong> (Industry: {getValues().sector}, {breakdown.metric} column)</p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-gray-900">STEP 3 – Calculate Adjustment Factors</h4>
+                                                    <ul className="list-disc pl-5 text-gray-600 space-y-1">
+                                                        <li>Growth Factor (GF): <strong>{breakdown.gf.toFixed(2)}</strong></li>
+                                                        <li>Margin Factor (MF): <strong>{breakdown.mf.toFixed(2)}</strong></li>
+                                                        <li>Risk Factor (RF): <strong>{breakdown.rf.toFixed(2)}</strong></li>
+                                                        <li>Age Factor (AF): <strong>{breakdown.af.toFixed(2)}</strong></li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-gray-900">STEP 4 – Calculate Adjusted Multiple</h4>
+                                                    <p className="text-gray-600">
+                                                        Adjusted Multiple = {breakdown.baseMultiple} × {breakdown.gf.toFixed(2)} × {breakdown.mf.toFixed(2)} × {breakdown.rf.toFixed(2)} × {breakdown.af.toFixed(2)}
+                                                    </p>
+                                                    <p className="text-gray-900 font-bold bg-gray-100 px-3 py-1.5 rounded inline-block">
+                                                        Final Adjusted Multiple = {breakdown.adjustedMultiple}x
+                                                    </p>
+                                                </div>
+
+                                                <div className="space-y-2">
+                                                    <h4 className="font-semibold text-gray-900">STEP 5 – Calculate Valuation Range</h4>
+                                                    <ul className="space-y-2 text-gray-700">
+                                                        <li className="flex justify-between border-b border-gray-100 pb-1">
+                                                            <span>Valuation Low <span className="text-gray-400 text-xs">(× 0.90)</span></span> 
+                                                            <strong>{breakdown.valLow >= 10000000 ? `₹${(breakdown.valLow / 10000000).toFixed(2)} Cr` : breakdown.valLow >= 100000 ? `₹${(breakdown.valLow / 100000).toFixed(2)} L` : `₹${breakdown.valLow.toLocaleString('en-IN')}`}</strong>
+                                                        </li>
+                                                        <li className="flex justify-between border-b border-gray-100 pb-1 bg-brand-red/5 px-2 font-bold text-brand-red rounded">
+                                                            <span>Valuation Mid <span className="text-brand-red/50 text-xs font-normal">(× 1.00)</span></span> 
+                                                            <strong>{breakdown.valMid >= 10000000 ? `₹${(breakdown.valMid / 10000000).toFixed(2)} Cr` : breakdown.valMid >= 100000 ? `₹${(breakdown.valMid / 100000).toFixed(2)} L` : `₹${breakdown.valMid.toLocaleString('en-IN')}`}</strong>
+                                                        </li>
+                                                        <li className="flex justify-between border-b border-gray-100 pb-1">
+                                                            <span>Valuation High <span className="text-gray-400 text-xs">(× 1.10)</span></span> 
+                                                            <strong>{breakdown.valHigh >= 10000000 ? `₹${(breakdown.valHigh / 10000000).toFixed(2)} Cr` : breakdown.valHigh >= 100000 ? `₹${(breakdown.valHigh / 100000).toFixed(2)} L` : `₹${breakdown.valHigh.toLocaleString('en-IN')}`}</strong>
+                                                        </li>
+                                                    </ul>
+                                                    {breakdown.ebitdaPenalty !== undefined && breakdown.ebitdaPenalty !== null && (
+                                                        <div className="mt-3 bg-red-50/50 border border-red-100 rounded-lg p-3 space-y-1">
+                                                            <h5 className="font-semibold text-brand-red text-xs">Operating Loss (Negative EBITDA) Penalty Applied</h5>
+                                                            <p className="text-zinc-500 text-[11px] leading-relaxed">
+                                                                Since the company operates at an operating loss, the base Revenue Valuation is adjusted downward by applying your sector's EBITDA multiple ({breakdown.adjustedEbitdaMultiple}x) directly to the EBITDA loss:
+                                                            </p>
+                                                            <div className="flex justify-between text-xs font-bold text-brand-red pt-1 border-t border-red-100/50">
+                                                                <span>EBITDA Loss Penalty (EBITDA {breakdown.ebitdaVal >= 10000000 ? `₹${(breakdown.ebitdaVal / 10000000).toFixed(2)} Cr` : breakdown.ebitdaVal >= 100000 ? `₹${(breakdown.ebitdaVal / 100000).toFixed(2)} L` : `₹${breakdown.ebitdaVal.toLocaleString('en-IN')}`} × {breakdown.adjustedEbitdaMultiple}x)</span>
+                                                                <span>-₹{Math.abs(breakdown.ebitdaPenalty) >= 10000000 ? `${(Math.abs(breakdown.ebitdaPenalty) / 10000000).toFixed(2)} Cr` : Math.abs(breakdown.ebitdaPenalty) >= 100000 ? `${(Math.abs(breakdown.ebitdaPenalty) / 100000).toFixed(2)} L` : Math.abs(breakdown.ebitdaPenalty).toLocaleString('en-IN')}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : breakdown === "error" ? (
+                                            <div className="py-8 text-center text-brand-red font-medium">Failed to fetch calculation logic. Please ensure the backend is running and the database is configured.</div>
+                                        ) : (
+                                            <div className="py-8 text-center text-gray-500">Loading calculation data...</div>
+                                        )}
+                                    </DialogContent>
+                                </Dialog>
                             )}
                         </div>
                     </div>
@@ -242,7 +372,7 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
                         {currentStep < 4 && (
                             <Button
                                 onClick={nextStep}
-                                className="bg-brand-red hover:bg-red-700 text-white min-w-[120px]"
+                                className="bg-brand-red hover:bg-red-700 text-white min-w-[120px] cursor-pointer"
                                 type="button"
                             >
                                 Next <ArrowRight className="ml-2 h-4 w-4" />

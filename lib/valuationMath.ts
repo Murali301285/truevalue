@@ -26,87 +26,125 @@ export interface ValuationFactors {
     ageImpact: number;
 }
 
+export function cleanNumber(val: any): number {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    const cleanStr = String(val).replace(/[^\d.-]/g, "").trim();
+    const num = Number(cleanStr);
+    return isNaN(num) ? 0 : num;
+}
+
 export function calculateAdvancedValuation(
     data: any, 
-    industries: any[]
+    industries: any[] = [],
+    configFactors?: any
 ): ValuationFactors {
     
-    // 1. Choose Metric
-    let metric: "EBITDA" | "Revenue" = "Revenue";
-    let metricValue = Number(data.revenue || 0);
+    const revenueNum = cleanNumber(data.revenue);
+    const ebitdaNum = cleanNumber(data.ebitda);
 
-    const ebitdaNum = Number(data.ebitda);
-    if (!isNaN(ebitdaNum) && ebitdaNum > 0) {
-        metric = "EBITDA";
-        metricValue = ebitdaNum;
-    }
-
-    // 2. Fetch Base Multiple
+    // 1. Fetch Multipliers for Sector
     const industry = industries.find(i => i.name === data.sector);
-    let baseMultiple = 0;
-    let benchmarkLow = 0;
-    let benchmarkHigh = 0;
+    let baseMultRevFrom = 1.0;
+    let baseMultRevTo = 2.5;
+    let baseMultEbitdaFrom = 5.0;
+    let baseMultEbitdaTo = 7.0;
 
     if (industry && industry.baseMultiplier) {
-        if (metric === "EBITDA") {
-            benchmarkLow = Number(industry.baseMultiplier.ebitdaMultipleFrom || 0);
-            benchmarkHigh = Number(industry.baseMultiplier.ebitdaMultipleTo || 0);
-        } else {
-            benchmarkLow = Number(industry.baseMultiplier.revMultipleFrom || 0);
-            benchmarkHigh = Number(industry.baseMultiplier.revMultipleTo || 0);
-        }
-        // Base multiple is the midpoint
-        baseMultiple = (benchmarkLow + benchmarkHigh) / 2;
+        baseMultRevFrom = Number(industry.baseMultiplier.revMultipleFrom || 0);
+        baseMultRevTo = Number(industry.baseMultiplier.revMultipleTo || 0);
+        baseMultEbitdaFrom = Number(industry.baseMultiplier.ebitdaMultipleFrom || 0);
+        baseMultEbitdaTo = Number(industry.baseMultiplier.ebitdaMultipleTo || 0);
     }
 
-    // Default fallbacks if missing
-    if (baseMultiple === 0) {
-        if (metric === "EBITDA") {
-            benchmarkLow = 5.0;
-            benchmarkHigh = 7.0;
-        } else {
-            benchmarkLow = 1.2;
-            benchmarkHigh = 2.0;
-        }
-        baseMultiple = (benchmarkLow + benchmarkHigh) / 2;
-    }
+    let baseMultipleRev = (baseMultRevFrom + baseMultRevTo) / 2;
+    if (baseMultRevFrom === 0) baseMultipleRev = baseMultRevTo;
 
-    // 3. Modifiers Setup
-    
+    let baseMultipleEbitda = (baseMultEbitdaFrom + baseMultEbitdaTo) / 2;
+    if (baseMultEbitdaFrom === 0) baseMultipleEbitda = baseMultEbitdaTo;
+
+    // 2. Modifiers Setup
+    const f = configFactors || {
+        growthLow: 0.9, growthMed: 1.0, growthHigh: 1.15,
+        marginLow: 0.9, marginMed: 1.0, marginHigh: 1.1,
+        riskHigh: 0.85, riskMed: 1.0, riskLow: 1.1,
+        age0to3: 0.9, age3to7: 1.0, age7plus: 1.05
+    };
+
     // Growth Factor (GF)
-    let growthFactor = 1.0;
-    let growthImpact = 0;
-    if (data.revenueGrowth === "Low") { growthFactor = 0.9; growthImpact = -10; }
-    else if (data.revenueGrowth === "High") { growthFactor = 1.15; growthImpact = 15; }
+    let growthFactor = Number(f.growthMed);
+    if (data.revenueGrowth === "Low") { growthFactor = Number(f.growthLow); }
+    else if (data.revenueGrowth === "High") { growthFactor = Number(f.growthHigh); }
 
-    // Profitability Factor (PF) - Only if using Revenue as metric
-    let profitFactor = 1.0;
-    let profitImpact = 0;
-    if (metric === "Revenue") {
-        if (data.profitMargin === "Low") { profitFactor = 0.9; profitImpact = -10; }
-        else if (data.profitMargin === "High") { profitFactor = 1.1; profitImpact = 10; }
+    // Margin Factor (MF)
+    let profitFactor = Number(f.marginMed);
+    if (data.profitMargin === "Low") { profitFactor = Number(f.marginLow); }
+    else if (data.profitMargin === "High") { profitFactor = Number(f.marginHigh); }
+
+    // Risk Factor (RF)
+    let riskFactor = Number(f.riskMed);
+    if (data.businessStability === "Low") { riskFactor = Number(f.riskHigh); }
+    else if (data.businessStability === "High") { riskFactor = Number(f.riskLow); }
+
+    // Age Factor (AF)
+    let ageFactor = Number(f.age3to7);
+    if (data.age === "0-3") { ageFactor = Number(f.age0to3); }
+    else if (data.age === "7+") { ageFactor = Number(f.age7plus); }
+
+    // Calculate Adjusted Multiples
+    let adjustedMultipleRev = baseMultipleRev * growthFactor * profitFactor * riskFactor * ageFactor;
+    if (adjustedMultipleRev < 0.5) adjustedMultipleRev = 0.5;
+    if (adjustedMultipleRev > 4.0) adjustedMultipleRev = 4.0;
+
+    let adjustedMultipleEbitda = baseMultipleEbitda * growthFactor * riskFactor * ageFactor;
+    if (adjustedMultipleEbitda < 3.0) adjustedMultipleEbitda = 3.0;
+    if (adjustedMultipleEbitda > 10.0) adjustedMultipleEbitda = 10.0;
+
+    // 3. Choose Metric and Calculate Base EV
+    let metric: "EBITDA" | "Revenue" = "Revenue";
+    let metricValue = revenueNum;
+    let baseMultiple = baseMultipleRev;
+    let adjustedMultiple = adjustedMultipleRev;
+
+    let midValue = 0;
+    let lowValue = 0;
+    let highValue = 0;
+
+    if (ebitdaNum > 0) {
+        // Profitable: Use EBITDA directly
+        metric = "EBITDA";
+        metricValue = ebitdaNum;
+        baseMultiple = baseMultipleEbitda;
+        adjustedMultiple = adjustedMultipleEbitda;
+        
+        midValue = metricValue * adjustedMultiple * 1.00;
+        lowValue = metricValue * adjustedMultiple * 0.90;
+        highValue = metricValue * adjustedMultiple * 1.10;
+    } else if (ebitdaNum < 0) {
+        // Unprofitable (Negative EBITDA): Blended Valuation to penalize operating loss (do not skip EBITDA)
+        metric = "Revenue";
+        metricValue = revenueNum;
+        baseMultiple = baseMultipleRev;
+        adjustedMultiple = adjustedMultipleRev;
+
+        const revVal = revenueNum * adjustedMultipleRev;
+        const ebitdaPenalty = ebitdaNum * adjustedMultipleEbitda; // Note: ebitdaNum is negative, so this naturally subtracts
+        
+        const blendedEV = revVal + ebitdaPenalty;
+        midValue = blendedEV > 0 ? blendedEV : 0;
+        lowValue = (blendedEV * 0.90) > 0 ? (blendedEV * 0.90) : 0;
+        highValue = (blendedEV * 1.10) > 0 ? (blendedEV * 1.10) : 0;
+    } else {
+        // EBITDA is 0 or undefined: Standard Revenue valuation
+        metric = "Revenue";
+        metricValue = revenueNum;
+        baseMultiple = baseMultipleRev;
+        adjustedMultiple = adjustedMultipleRev;
+
+        midValue = metricValue * adjustedMultiple * 1.00;
+        lowValue = metricValue * adjustedMultiple * 0.90;
+        highValue = metricValue * adjustedMultiple * 1.10;
     }
-
-    // Risk Factor (RF) - based on Business Stability (Low stability = High Risk)
-    let riskFactor = 1.0;
-    let riskImpact = 0;
-    // Business Stability: Low means high risk (0.85). High means low risk (1.1).
-    if (data.businessStability === "Low") { riskFactor = 0.85; riskImpact = -15; }
-    else if (data.businessStability === "High") { riskFactor = 1.1; riskImpact = 10; }
-
-    // Age Factor (AF) - business vintage
-    let ageFactor = 1.0;
-    let ageImpact = 0;
-    if (data.age === "0-3") { ageFactor = 0.9; ageImpact = -10; }
-    else if (data.age === "7+") { ageFactor = 1.05; ageImpact = 5; }
-
-    // 4. Calculate Adjusted Multiple
-    const adjustedMultiple = baseMultiple * growthFactor * profitFactor * riskFactor * ageFactor;
-
-    // 5. Calculate Final Valuation Range
-    const midValue = metricValue * adjustedMultiple;
-    const lowValue = midValue * 0.9;
-    const highValue = midValue * 1.1;
 
     return {
         metric,
@@ -127,12 +165,12 @@ export function calculateAdvancedValuation(
         lowMultiple: adjustedMultiple * 0.9,
         highMultiple: adjustedMultiple * 1.1,
 
-        benchmarkLow,
-        benchmarkHigh,
+        benchmarkLow: metric === "EBITDA" ? baseMultEbitdaFrom : baseMultRevFrom,
+        benchmarkHigh: metric === "EBITDA" ? baseMultEbitdaTo : baseMultRevTo,
 
-        growthImpact,
-        profitImpact,
-        riskImpact,
-        ageImpact
+        growthImpact: Math.round((growthFactor - 1) * 100),
+        profitImpact: Math.round((profitFactor - 1) * 100),
+        riskImpact: Math.round((riskFactor - 1) * 100),
+        ageImpact: Math.round((ageFactor - 1) * 100)
     };
 }

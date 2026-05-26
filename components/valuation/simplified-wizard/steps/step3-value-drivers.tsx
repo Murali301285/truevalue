@@ -116,7 +116,7 @@ export function Step3ValueDrivers() {
                             <TrendingUp className="w-5 h-5" />
                         </div>
                         <div>
-                            <Label className="text-base font-semibold text-gray-900">Revenue growth in last 3 years</Label>
+                            <Label className="text-base font-semibold text-gray-900">Revenue Growth Rate</Label>
                             {errors.revenueGrowth && <p className="text-xs text-brand-red mt-1">{errors.revenueGrowth.message}</p>}
                         </div>
                     </div>
@@ -136,7 +136,7 @@ export function Step3ValueDrivers() {
                                 <Percent className="w-5 h-5" />
                             </div>
                             <div>
-                                <Label className="text-base font-semibold text-gray-900">Estimated Profit Margin</Label>
+                                <Label className="text-base font-semibold text-gray-900">Profit Margin Level</Label>
                                 {errors.profitMargin && <p className="text-xs text-brand-red mt-1">{errors.profitMargin.message}</p>}
                             </div>
                         </div>
@@ -156,8 +156,8 @@ export function Step3ValueDrivers() {
                             <ShieldCheck className="w-5 h-5" />
                         </div>
                         <div>
-                            <Label className="text-base font-semibold text-gray-900">Business Stability</Label>
-                            <p className="text-sm text-gray-500 font-normal">High = recurring customers, low dependence on one client</p>
+                            <Label className="text-base font-semibold text-gray-900">Business Stability / Risk</Label>
+                            <p className="text-sm text-gray-500 font-normal">High Stability = recurring customers, not owner-dependent; Low = single client, founder-run.</p>
                             {errors.businessStability && <p className="text-xs text-brand-red mt-1">{errors.businessStability.message}</p>}
                         </div>
                     </div>

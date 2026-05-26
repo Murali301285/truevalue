@@ -10,17 +10,44 @@ export function Step2BusinessDetails() {
     const { register, formState: { errors }, setValue, watch, getValues } = useFormContext<SimplifiedValuationFormData>();
     
     const watchAge = watch("age");
+    const watchIncDate = watch("incorporationDate");
 
     const [displayRev, setDisplayRev] = useState("");
     const [displayEbitda, setDisplayEbitda] = useState("");
     const [displayAssets, setDisplayAssets] = useState("");
     const [displayLiabilities, setDisplayLiabilities] = useState("");
 
+    // Calculate age of business from incorporation date
+    useEffect(() => {
+        if (watchIncDate) {
+            const incDate = new Date(watchIncDate);
+            const today = new Date();
+            let ageYears = today.getFullYear() - incDate.getFullYear();
+            const m = today.getMonth() - incDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < incDate.getDate())) {
+                ageYears--;
+            }
+            if (ageYears >= 0) {
+                let ageVal: "0-3" | "3-7" | "7+" = "0-3";
+                if (ageYears > 7) {
+                    ageVal = "7+";
+                } else if (ageYears >= 3) {
+                    ageVal = "3-7";
+                }
+                setValue("age", ageVal, { shouldValidate: true });
+            }
+        }
+    }, [watchIncDate, setValue]);
+
     const formatCurrency = (val: string | number | null | undefined) => {
         if (val === null || val === undefined || val === "") return "";
-        const num = Number(val.toString().replace(/,/g, ""));
+        if (val === "-") return "-";
+        const isNegative = val.toString().startsWith("-");
+        const cleanVal = val.toString().replace(/-/g, "").replace(/,/g, "");
+        const num = Number(cleanVal);
         if (isNaN(num)) return "";
-        return new Intl.NumberFormat('en-IN').format(num);
+        const formatted = new Intl.NumberFormat('en-IN').format(num);
+        return isNegative ? `-${formatted}` : formatted;
     };
 
     useEffect(() => {
@@ -32,8 +59,23 @@ export function Step2BusinessDetails() {
 
     const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: "revenue" | "ebitda" | "totalAssets" | "totalLiabilities") => {
         const rawVal = e.target.value.replace(/,/g, "");
-        if (/^\d*$/.test(rawVal)) {
-            setValue(fieldName, rawVal ? Number(rawVal) : undefined, { shouldValidate: true });
+        
+        // Allow negative signs only for revenue and ebitda
+        const isValid = (fieldName === "revenue" || fieldName === "ebitda")
+            ? /^-?\d*$/.test(rawVal)
+            : /^\d*$/.test(rawVal);
+
+        if (isValid) {
+            if (rawVal === "-") {
+                setValue(fieldName, undefined as any);
+                if (fieldName === "revenue") setDisplayRev("-");
+                if (fieldName === "ebitda") setDisplayEbitda("-");
+                return;
+            }
+
+            const numVal = rawVal ? Number(rawVal) : undefined;
+            setValue(fieldName, numVal, { shouldValidate: true });
+            
             if (fieldName === "revenue") setDisplayRev(formatCurrency(rawVal));
             if (fieldName === "ebitda") setDisplayEbitda(formatCurrency(rawVal));
             if (fieldName === "totalAssets") setDisplayAssets(formatCurrency(rawVal));
@@ -43,10 +85,50 @@ export function Step2BusinessDetails() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Balance Sheet / PnL */}
+            {/* Operations & Context */}
             <Card>
                 <CardHeader>
+                    <CardTitle className="text-lg text-brand-red">Operations & Context</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Age Dropdown for calculations */}
+                    <div className="space-y-2">
+                        <Label htmlFor="age" className="text-gray-700 font-semibold">
+                            Age of Business <span className="text-brand-red">*</span>
+                        </Label>
+                        <Select onValueChange={(value) => setValue("age", value as any, { shouldValidate: true })} value={watchAge}>
+                            <SelectTrigger className={`w-full ${errors.age ? 'border-brand-red focus:ring-brand-red' : ''}`}>
+                                <SelectValue placeholder="Select age of business" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="0-3">0 – 3 years</SelectItem>
+                                <SelectItem value="3-7">3 – 7 years</SelectItem>
+                                <SelectItem value="7+">7+ years</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {errors.age && <p className="text-sm text-brand-red mt-1">{errors.age.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="numberOfEmployees" className="text-gray-700 font-semibold">
+                            Number of Employees
+                        </Label>
+                        <Input
+                            id="numberOfEmployees"
+                            type="number"
+                            min="0"
+                            placeholder="e.g. 25"
+                            {...register("numberOfEmployees")}
+                        />
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Balance Sheet / PnL */}
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <CardTitle className="text-lg text-brand-red">Financial Statements</CardTitle>
+                    <span className="text-xs font-bold text-brand-red bg-red-50 border border-brand-red/20 px-3 py-1 rounded-full uppercase tracking-wider">Full Financial Year</span>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
@@ -108,45 +190,6 @@ export function Step2BusinessDetails() {
                             onChange={(e) => handleNumberChange(e, "totalLiabilities")}
                         />
                         {errors.totalLiabilities && <p className="text-sm text-brand-red mt-1">{errors.totalLiabilities.message}</p>}
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Operations & Context */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg text-brand-red">Operations & Context</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Age Dropdown for calculations */}
-                    <div className="space-y-2">
-                        <Label htmlFor="age" className="text-gray-700 font-semibold">
-                            Age Bracket <span className="text-brand-red">*</span>
-                        </Label>
-                        <Select onValueChange={(value) => setValue("age", value as any, { shouldValidate: true })} value={watchAge}>
-                            <SelectTrigger className={`w-full ${errors.age ? 'border-brand-red focus:ring-brand-red' : ''}`}>
-                                <SelectValue placeholder="Select age bracket" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="0-3">0 – 3 years</SelectItem>
-                                <SelectItem value="3-7">3 – 7 years</SelectItem>
-                                <SelectItem value="7+">7+ years</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        {errors.age && <p className="text-sm text-brand-red mt-1">{errors.age.message}</p>}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="numberOfEmployees" className="text-gray-700 font-semibold">
-                            Number of Employees
-                        </Label>
-                        <Input
-                            id="numberOfEmployees"
-                            type="number"
-                            min="0"
-                            placeholder="e.g. 25"
-                            {...register("numberOfEmployees")}
-                        />
                     </div>
                 </CardContent>
             </Card>

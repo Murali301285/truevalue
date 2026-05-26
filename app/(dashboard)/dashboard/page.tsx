@@ -7,12 +7,30 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { getUserValuations } from "@/app/actions/valuation";
 
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     const isAdmin = (session?.user as any)?.role === 'ADMIN';
+    const [valuations, setValuations] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    if (status === "loading") {
+    useEffect(() => {
+        async function fetchValuations() {
+            try {
+                const data = await getUserValuations();
+                setValuations(data);
+            } catch (err) {
+                console.error("Failed to load valuations:", err);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchValuations();
+    }, []);
+
+    if (status === "loading" || isLoading) {
         return <div className="p-6 text-center text-zinc-500 animate-pulse mt-10">Loading Dashboard Data...</div>;
     }
 
@@ -52,18 +70,18 @@ export default function DashboardPage() {
             {isAdmin ? (
                 <>
                     {/* Admin KPI Header */}
-                    <AdminKPICards />
+                    <AdminKPICards valuations={valuations} />
 
                     {/* Admin Hierarchical Valuation History Table */}
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <ValuationHistory />
+                        <ValuationHistory valuations={valuations} />
                     </div>
                 </>
             ) : (
                 <>
                     {/* Standard User Flat History Table */}
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <UserValuationHistory />
+                        <UserValuationHistory valuations={valuations} />
                     </div>
                 </>
             )}

@@ -281,6 +281,35 @@ model BaseMultiplier {
   updatedAt          DateTime @updatedAt
 }
 
+model PlanValuationFactor {
+  id          String   @id @default(cuid())
+  planName    String   @unique // e.g., "Express", "Standard", "Certified"
+  
+  // Growth Factor (GF)
+  growthLow   Decimal  @db.Decimal(10, 2) @default(0.90)
+  growthMed   Decimal  @db.Decimal(10, 2) @default(1.00)
+  growthHigh  Decimal  @db.Decimal(10, 2) @default(1.15)
+  
+  // Margin Factor (MF)
+  marginLow   Decimal  @db.Decimal(10, 2) @default(0.90)
+  marginMed   Decimal  @db.Decimal(10, 2) @default(1.00)
+  marginHigh  Decimal  @db.Decimal(10, 2) @default(1.10)
+  
+  // Risk Factor (RF)
+  riskHigh    Decimal  @db.Decimal(10, 2) @default(0.85)
+  riskMed     Decimal  @db.Decimal(10, 2) @default(1.00)
+  riskLow     Decimal  @db.Decimal(10, 2) @default(1.10)
+  
+  // Age Factor (AF)
+  age0to3     Decimal  @db.Decimal(10, 2) @default(0.90)
+  age3to7     Decimal  @db.Decimal(10, 2) @default(1.00)
+  age7plus    Decimal  @db.Decimal(10, 2) @default(1.05)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
 model PricingPlan {
   id          String   @id @default(cuid())
   name        String   @unique // e.g., Standard, Certified
@@ -318,6 +347,7 @@ model AiModelConfig {
 
 model Valuation {
   id                String   @id @default(cuid())
+  userEmail         String?
   // Company Info
   companyName       String
   industry          String

@@ -16,7 +16,7 @@ export const simplifiedValuationSchema = z.object({
   pincode: z.string().optional(),
 
   // Step 2: Financial Details ("Tell us about your business")
-  revenue: z.preprocess((val) => (val === "" || isNaN(Number(val)) || typeof val === 'undefined' ? undefined : Number(val)), z.number().min(0, "Revenue cannot be negative")),
+  revenue: z.preprocess((val) => (val === "" || isNaN(Number(val)) || typeof val === 'undefined' ? undefined : Number(val)), z.number()),
   ebitda: z.preprocess((val) => (val === "" || isNaN(Number(val)) || typeof val === 'undefined' ? undefined : Number(val)), z.number().optional().nullable()),
   totalAssets: z.preprocess((val) => (val === "" || isNaN(Number(val)) || typeof val === 'undefined' ? undefined : Number(val)), z.number().min(0, "Assets cannot be negative")),
   totalLiabilities: z.preprocess((val) => (val === "" || isNaN(Number(val)) || typeof val === 'undefined' ? undefined : Number(val)), z.number().min(0, "Liabilities cannot be negative")),
