@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Check, BarChart, FileText, ArrowRight, Shield, Zap, Lock, TrendingUp, ClipboardCheck, Search } from "lucide-react";
+import { Check, BarChart, FileText, ArrowRight, Shield, Zap, Lock, TrendingUp, ClipboardCheck, Search, Clock, LogIn, FileEdit, CreditCard, Download } from "lucide-react";
+import { motion } from "framer-motion";
 import { NotifyMeModal } from "@/components/landing/notify-me-modal";
 import { FeatureCard } from "@/components/landing/feature-card";
 import { HeroSection } from "@/components/landing/hero-section";
