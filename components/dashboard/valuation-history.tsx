@@ -830,7 +830,7 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
                                 <span className="text-zinc-400 text-xs font-semibold">INR</span>
                             </div>
 
-                            <p className="text-[10px] text-zinc-400 mt-2.5 leading-relaxed relative z-10">
+                            <p className="text-[10px] text-zinc-500 mt-2.5 leading-relaxed relative z-10">
                                 Calculations derived using multi-factor DCF models, weighted capital costs, and sector multiples.
                             </p>
                         </motion.div>
@@ -845,8 +845,8 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
                                         <Download className="w-5 h-5" /> Download Report (PDF)
                                     </a>
                                 </Button>
-                                <p className="text-[10px] text-center text-zinc-400 flex items-center justify-center gap-1">
-                                    <Info className="w-3 h-3 text-zinc-350" /> Compiled & certified on {formatDate(valuation.date)}
+                                <p className="text-[10px] text-center text-zinc-600 font-semibold flex items-center justify-center gap-1.5">
+                                    <Info className="w-3.5 h-3.5 text-zinc-500" /> Compiled & certified on {formatDate(valuation.date)}
                                 </p>
                             </div>
                         ) : (
@@ -864,7 +864,7 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
 
                     {/* Support & Footer Section */}
                     <motion.div variants={itemVariants} className="pt-6 border-t border-zinc-100 text-center">
-                        <p className="text-xs text-zinc-400 mb-1.5">Questions regarding this valuation request?</p>
+                        <p className="text-xs text-zinc-500 font-semibold mb-1.5">Questions regarding this valuation request?</p>
                         <Button variant="link" className="text-brand-red font-bold text-xs h-auto p-0 hover:text-[#8e161c]">
                             Contact Support Desk <ArrowUpRight className="w-3 h-3 ml-0.5 inline" />
                         </Button>
