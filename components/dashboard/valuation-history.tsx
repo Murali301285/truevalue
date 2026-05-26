@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle } from "lucide-react"
+import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle, Building2, MapPin, Receipt, Sparkles, TrendingUp, Calendar, Users, RefreshCw, AlertCircle, ArrowUpRight, DollarSign } from "lucide-react"
 import React, { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -40,12 +40,27 @@ const mapValuationToRow = (val: any) => {
         companyName: val.companyName,
         industry: val.industry,
         userName: val.userEmail || "Client",
-        phone: "N/A",
+        phone: val.phone || "N/A",
         tier: val.purpose === "Express" ? "Instant" : "Certified",
-        status: "Completed",
-        amount: 499,
-        revenue: val.revenue,
-        profit: val.ebitda,
+        status: val.status || "Completed",
+        amount: val.purpose === "Express" ? 499 : 14999,
+        revenue: Number(val.revenue || 0),
+        profit: Number(val.ebitda || 0),
+        pat: Number(val.pat || 0),
+        totalAssets: Number(val.totalAssets || 0),
+        totalLiabilities: Number(val.totalLiabilities || 0),
+        legalStructure: val.legalStructure || "Private Limited",
+        incorporationDate: val.incorporationDate,
+        addressLine1: val.addressLine1,
+        city: val.city,
+        state: val.state,
+        pincode: val.pincode,
+        pan: val.pan,
+        gstNo: val.gstNo,
+        cin: val.cin,
+        numberOfEmployees: val.numberOfEmployees,
+        yearsInOperation: val.yearsInOperation || 1,
+        estimatedValue: Number(val.estimatedValue || 0),
         downloadUrl: `/report/${val.id}`
     };
 };
@@ -535,118 +550,326 @@ function StatusBadge({ status }: { status: string }) {
 // Ensure the RequestDetailSheet relies strictly on the fields we augmented.
 function RequestDetailSheet({ valuation }: { valuation: any }) {
     // Determine progress step
-    const steps = ["Uploaded", "Processing", "Analyst Review", "Completed"];
+    const steps = [
+        { label: "Uploaded", icon: FileText, desc: "Valuation request and data submitted" },
+        { label: "Processing", icon: RefreshCw, desc: "Algorithmic parsing & ratio models loaded" },
+        { label: "Analyst Review", icon: Search, desc: "Expert verification & adjustment factors" },
+        { label: "Completed", icon: Sparkles, desc: "Report compiled and ready for download" }
+    ];
+
     let currentStepIndex = 1;
     if (valuation.status === 'Analyst Review') currentStepIndex = 2;
     if (valuation.status === 'Completed') currentStepIndex = 3;
 
-    // Calculate estimated date safely using timestamps to avoid Date mutation issues
+    // Calculate estimated date safely using timestamps
     const estimatedDate = new Date(new Date(valuation.date).getTime() + (2 * 24 * 60 * 60 * 1000));
+
+    // Check optional address/tax details
+    const hasAddress = valuation.addressLine1 || valuation.city || valuation.state || valuation.pincode;
+    const fullAddress = [valuation.addressLine1, valuation.city, valuation.state, valuation.pincode].filter(Boolean).join(", ");
+    
+    const hasTaxDetails = valuation.pan || valuation.gstNo || valuation.cin;
+
+    // Framer motion variants for stagger load
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.08
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 15 },
+        show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } }
+    };
 
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button size="icon" variant="outline" className="h-8 w-8 shadow-sm border-zinc-300" title="View Details">
-                    <Eye className="w-4 h-4 text-zinc-600" />
+                <Button size="icon" variant="outline" className="h-8 w-8 shadow-sm border-zinc-200 hover:border-[#a81b21] hover:text-[#a81b21] transition-all" title="View Details">
+                    <Eye className="w-4 h-4" />
                 </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-md overflow-y-auto w-full">
-                <SheetHeader className="mb-6">
-                    <SheetTitle className="text-xl">Request Details</SheetTitle>
-                    <SheetDescription>
-                        Comprehensive breakdown of the valuation request.
+            <SheetContent className="sm:max-w-md overflow-y-auto w-full border-l border-zinc-150 p-6 bg-zinc-50/50">
+                <SheetHeader className="mb-6 relative pb-4 border-b border-zinc-100">
+                    <div className="absolute top-0 right-10 flex gap-2">
+                        <Badge className={`${
+                            valuation.tier === 'Instant' 
+                                ? 'bg-red-50 text-[#a81b21] border-red-100 hover:bg-red-50' 
+                                : 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-50'
+                        } border shadow-none text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5`}>
+                            {valuation.tier} Tier
+                        </Badge>
+                        <Badge className={`${
+                            valuation.status === 'Completed'
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-50'
+                                : valuation.status === 'Processing'
+                                ? 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-50'
+                                : 'bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-50'
+                        } border shadow-none text-[10px] font-bold tracking-wide uppercase px-2.5 py-0.5`}>
+                            {valuation.status}
+                        </Badge>
+                    </div>
+                    <SheetTitle className="text-xl font-extrabold text-zinc-900 tracking-tight flex items-center gap-2">
+                        Request Details
+                    </SheetTitle>
+                    <SheetDescription className="text-zinc-500 text-xs mt-1">
+                        Comprehensive summary and live progress tracker for your valuation report.
                     </SheetDescription>
                 </SheetHeader>
 
-                <div className="space-y-8">
+                <motion.div 
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="show"
+                    className="space-y-6 pb-8"
+                >
                     {/* Status Tracker */}
-                    <div className="space-y-4">
-                        <h4 className="font-semibold text-sm text-zinc-900">Status Tracker</h4>
-                        <div className="relative pl-4 border-l-2 border-zinc-100 space-y-8">
+                    <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-[#a81b21]/10" />
+                        <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-[#a81b21]" /> Live Progress Tracker
+                        </h4>
+                        
+                        <div className="relative pl-7 space-y-6">
+                            {/* Running timeline track line */}
+                            <div className="absolute left-[9px] top-1.5 bottom-1.5 w-0.5 bg-zinc-100 -z-10" />
+                            <div className="absolute left-[9px] top-1.5 w-0.5 bg-[#a81b21]/80 transition-all duration-700 -z-10" 
+                                 style={{ height: `${(currentStepIndex / (steps.length - 1)) * 90}%` }}
+                            />
+
                             {steps.map((step, index) => {
+                                const StepIcon = step.icon;
                                 const isCompleted = index <= currentStepIndex;
                                 const isCurrent = index === currentStepIndex;
 
                                 return (
-                                    <div key={step} className="relative">
-                                        <div className={`absolute -left-[21px] top-1 w-3 h-3 rounded-full border-2 ${isCompleted ? 'bg-brand-red border-brand-red' : 'bg-white border-zinc-300'}`} />
-                                        <div className="flex flex-col">
-                                            <span className={`text-sm font-medium ${isCompleted ? 'text-zinc-900' : 'text-zinc-400'}`}>{step}</span>
-                                            {isCurrent && (
-                                                <span className="text-xs text-brand-red font-medium animate-pulse">In Progress</span>
+                                    <div key={step.label} className="relative group">
+                                        {/* Status Marker Node */}
+                                        <div className={`absolute -left-[28px] top-0.5 w-[20px] h-[20px] rounded-full border-[1.5px] flex items-center justify-center transition-all duration-300 z-10
+                                            ${isCompleted 
+                                                ? 'bg-[#a81b21] border-[#a81b21] text-white shadow-sm shadow-red-950/20' 
+                                                : isCurrent
+                                                ? 'bg-white border-[#a81b21] text-[#a81b21] ring-4 ring-red-50'
+                                                : 'bg-white border-zinc-200 text-zinc-300'
+                                            }`}
+                                        >
+                                            {isCompleted && index < currentStepIndex ? (
+                                                <CheckCircle2 className="w-3 h-3 fill-white text-[#a81b21]" />
+                                            ) : (
+                                                <StepIcon className={`w-2.5 h-2.5 ${isCurrent ? 'animate-pulse' : ''}`} />
                                             )}
+                                        </div>
+
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-sm font-bold transition-colors ${
+                                                    isCompleted ? 'text-zinc-900' : 'text-zinc-400'
+                                                }`}>
+                                                    {step.label}
+                                                </span>
+                                                {isCurrent && (
+                                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-50 text-[#a81b21] animate-pulse uppercase tracking-wide">
+                                                        In Progress
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span className="text-[11px] text-zinc-400 leading-snug mt-0.5">{step.desc}</span>
                                         </div>
                                     </div>
                                 )
                             })}
                         </div>
-                    </div>
+                    </motion.div>
 
                     {/* Company Details */}
-                    <div className="space-y-3 p-4 bg-zinc-50 rounded-lg border border-zinc-100">
-                        <h4 className="font-semibold text-sm text-zinc-900 mb-2">Company Information</h4>
-                        <div className="grid grid-cols-2 gap-y-3 text-sm">
-                            <span className="text-zinc-500">Company Name</span>
-                            <span className="font-medium text-right">{valuation.companyName}</span>
-
-                            <span className="text-zinc-500">Industry</span>
-                            <span className="font-medium text-right">{valuation.industry}</span>
-
-                            <span className="text-zinc-500">Request ID</span>
-                            <span className="font-medium text-right font-mono text-xs">{valuation.id}</span>
-
-                            <span className="text-zinc-500">Date Submitted</span>
-                            <span className="font-medium text-right">{formatDate(valuation.date)}</span>
-
-                            <span className="text-zinc-500">Service Tier</span>
-                            <span className="font-medium text-right uppercase tracking-wide text-xs">{valuation.tier}</span>
-                        </div>
-                    </div>
-
-                     {/* User Details */}
-                     <div className="space-y-3 p-4 bg-white rounded-lg border border-zinc-200 shadow-sm">
-                        <h4 className="font-semibold text-sm text-zinc-900 mb-2">User & Financials</h4>
-                        <div className="grid grid-cols-2 gap-y-3 text-sm">
-                            <span className="text-zinc-500">Client Name</span>
-                            <span className="font-medium text-right">{valuation.userName}</span>
-
-                            <span className="text-zinc-500">Phone</span>
-                            <span className="font-medium text-right">{valuation.phone}</span>
-
-                            <span className="text-zinc-500">Revenue</span>
-                            <span className="font-medium text-right text-zinc-800">{formatCurrency(valuation.revenue)}</span>
-
-                            <span className="text-zinc-500">Profit</span>
-                            <span className="font-medium text-right text-emerald-600">{formatCurrency(valuation.profit)}</span>
-                        </div>
-                    </div>
-
-                    {/* Actions */}
-                    {valuation.status === 'Completed' ? (
-                        <div className="space-y-3">
-                            <Button className="w-full bg-brand-red hover:bg-red-700 text-white gap-2 shadow-lg shadow-red-900/10 h-12" asChild>
-                                <a href={valuation.downloadUrl || "#"} target="_blank" rel="noopener noreferrer">
-                                    <Download className="w-5 h-5" /> Download Report (PDF)
-                                </a>
-                            </Button>
-                            <p className="text-xs text-center text-zinc-400">Generated on {formatDate(valuation.date)}</p>
-                        </div>
-                    ) : (
-                        <div className="bg-blue-50/80 border border-blue-100 text-blue-800 p-4 rounded-xl text-sm flex gap-3 items-start shadow-sm shadow-blue-900/5">
-                            <Clock className="w-5 h-5 shrink-0 mt-0.5 text-blue-600" />
-                            <div>
-                                <p className="font-semibold mb-1 text-blue-900">Estimated Completion</p>
-                                <p className="text-blue-700">Your report is expected to be ready by {formatDate(estimatedDate)}.</p>
+                    <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm">
+                        <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
+                            <Building2 className="w-3.5 h-3.5 text-[#a81b21]" /> Company Profile
+                        </h4>
+                        <div className="divide-y divide-zinc-100 text-sm">
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Company Name</span>
+                                <span className="font-bold text-zinc-800 text-right">{valuation.companyName}</span>
+                            </div>
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Legal Structure</span>
+                                <span className="font-semibold text-zinc-700 text-right">{valuation.legalStructure}</span>
+                            </div>
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Industry Segment</span>
+                                <span className="font-semibold text-zinc-700 text-right">{valuation.industry}</span>
+                            </div>
+                            {valuation.incorporationDate && (
+                                <div className="flex justify-between py-2.5">
+                                    <span className="text-zinc-400 font-medium text-xs">Incorporation Date</span>
+                                    <span className="font-semibold text-zinc-700 text-right">{formatDate(valuation.incorporationDate)}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Years in Operation</span>
+                                <span className="font-semibold text-zinc-700 text-right">{valuation.yearsInOperation} Years</span>
+                            </div>
+                            {valuation.numberOfEmployees !== undefined && valuation.numberOfEmployees !== null && (
+                                <div className="flex justify-between py-2.5">
+                                    <span className="text-zinc-400 font-medium text-xs">Employee Count</span>
+                                    <span className="font-semibold text-zinc-700 text-right">{valuation.numberOfEmployees} Employees</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Request ID</span>
+                                <span className="font-mono text-[10px] text-zinc-500 font-semibold bg-zinc-50 border border-zinc-100 rounded px-1.5 py-0.5 break-all select-all">{valuation.id}</span>
                             </div>
                         </div>
+                    </motion.div>
+
+                    {/* Statutory & Tax Details (Conditional Rendering) */}
+                    {hasTaxDetails && (
+                        <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm">
+                            <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-3.5 flex items-center gap-1.5">
+                                <Receipt className="w-3.5 h-3.5 text-[#a81b21]" /> Statutory & Tax Information
+                            </h4>
+                            <div className="divide-y divide-zinc-100 text-sm">
+                                {valuation.pan && (
+                                    <div className="flex justify-between py-2.5">
+                                        <span className="text-zinc-400 font-medium text-xs">PAN Card</span>
+                                        <span className="font-mono font-bold text-zinc-800 tracking-wider uppercase">{valuation.pan.toUpperCase()}</span>
+                                    </div>
+                                )}
+                                {valuation.gstNo && (
+                                    <div className="flex justify-between py-2.5">
+                                        <span className="text-zinc-400 font-medium text-xs">GST Registration</span>
+                                        <span className="font-mono font-bold text-zinc-800 tracking-wider uppercase">{valuation.gstNo.toUpperCase()}</span>
+                                    </div>
+                                )}
+                                {valuation.cin && (
+                                    <div className="flex justify-between py-2.5">
+                                        <span className="text-zinc-400 font-medium text-xs">Corporate Identification (CIN)</span>
+                                        <span className="font-mono font-bold text-zinc-800 tracking-wider uppercase">{valuation.cin.toUpperCase()}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
                     )}
 
-                    {/* Support */}
-                    <div className="pt-6 border-t border-zinc-100 text-center">
-                        <p className="text-sm text-zinc-500 mb-2">Need help with this request?</p>
-                        <Button variant="link" className="text-brand-red font-semibold h-auto p-0">Contact Support</Button>
-                    </div>
-                </div>
+                    {/* Registered Office Address (Conditional Rendering) */}
+                    {hasAddress && (
+                        <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm">
+                            <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                <MapPin className="w-3.5 h-3.5 text-[#a81b21]" /> Registered Address
+                            </h4>
+                            <div className="text-sm font-semibold text-zinc-700 leading-relaxed bg-zinc-50 border border-zinc-100 rounded-xl p-3 flex gap-2">
+                                <MapPin className="w-4 h-4 text-zinc-400 shrink-0 mt-0.5" />
+                                <span>{fullAddress}</span>
+                            </div>
+                        </motion.div>
+                    )}
+
+                     {/* Financial Snapshot */}
+                     <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm">
+                        <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-[#a81b21]" /> Financial Performance
+                        </h4>
+                        
+                        <div className="grid grid-cols-2 gap-3.5 mb-4">
+                            <div className="bg-zinc-50/70 border border-zinc-100 rounded-xl p-3">
+                                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider block mb-1">Annual Revenue</span>
+                                <span className="font-black text-sm text-zinc-800">{formatCurrency(valuation.revenue)}</span>
+                            </div>
+                            <div className="bg-zinc-50/70 border border-zinc-100 rounded-xl p-3">
+                                <span className="text-zinc-400 text-[10px] font-bold uppercase tracking-wider block mb-1">EBITDA (Profit)</span>
+                                <span className="font-black text-sm text-zinc-800">{formatCurrency(valuation.profit)}</span>
+                            </div>
+                        </div>
+
+                        <div className="divide-y divide-zinc-100 text-sm">
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Net Profit (PAT)</span>
+                                <span className={`font-bold text-right ${valuation.pat >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    {formatCurrency(valuation.pat)}
+                                </span>
+                            </div>
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Total Assets</span>
+                                <span className="font-semibold text-zinc-700 text-right">{formatCurrency(valuation.totalAssets)}</span>
+                            </div>
+                            <div className="flex justify-between py-2.5">
+                                <span className="text-zinc-400 font-medium text-xs">Total Liabilities</span>
+                                <span className="font-semibold text-zinc-700 text-right">{formatCurrency(valuation.totalLiabilities)}</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Valuation Result (Premium Glow Card) */}
+                    {valuation.status === 'Completed' && valuation.estimatedValue > 0 && (
+                        <motion.div 
+                            variants={itemVariants} 
+                            whileHover={{ scale: 1.01 }}
+                            className="relative overflow-hidden bg-gradient-to-br from-[#a81b21]/5 via-white to-zinc-50 border border-brand-red/15 rounded-3xl p-6 shadow-md shadow-red-900/5"
+                        >
+                            {/* Sparkle Glow accents */}
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-[#a81b21]/5 rounded-full blur-2xl" />
+                            <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-[#a81b21]/5 rounded-full blur-2xl" />
+
+                            <div className="flex items-center justify-between mb-2 relative z-10">
+                                <span className="text-[10px] font-black text-brand-red uppercase tracking-widest flex items-center gap-1">
+                                    <Sparkles className="w-3 h-3 animate-spin-slow" /> Estimated Valuation
+                                </span>
+                                <span className="text-[9px] bg-red-50 text-brand-red font-bold px-2 py-0.5 rounded border border-red-100/50">
+                                    Final Report Result
+                                </span>
+                            </div>
+
+                            <div className="flex items-baseline gap-1.5 relative z-10">
+                                <span className="text-3xl font-black text-[#a81b21] tracking-tight">
+                                    {formatCurrency(valuation.estimatedValue)}
+                                </span>
+                                <span className="text-zinc-400 text-xs font-semibold">INR</span>
+                            </div>
+
+                            <p className="text-[10px] text-zinc-400 mt-2.5 leading-relaxed relative z-10">
+                                Calculations derived using multi-factor DCF models, weighted capital costs, and sector multiples.
+                            </p>
+                        </motion.div>
+                    )}
+
+                    {/* Primary Action Button Area */}
+                    <motion.div variants={itemVariants} className="space-y-4 pt-2">
+                        {valuation.status === 'Completed' ? (
+                            <div className="space-y-3">
+                                <Button className="w-full bg-[#a81b21] hover:bg-[#8e161c] text-white gap-2 shadow-lg shadow-red-900/15 h-12 rounded-xl transition-all font-bold tracking-wide active:scale-98" asChild>
+                                    <a href={valuation.downloadUrl || "#"} target="_blank" rel="noopener noreferrer">
+                                        <Download className="w-5 h-5" /> Download Report (PDF)
+                                    </a>
+                                </Button>
+                                <p className="text-[10px] text-center text-zinc-400 flex items-center justify-center gap-1">
+                                    <Info className="w-3 h-3 text-zinc-350" /> Compiled & certified on {formatDate(valuation.date)}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="bg-blue-50/60 border border-blue-100/80 text-blue-900 p-4.5 rounded-2xl text-xs flex gap-3.5 items-start shadow-sm">
+                                <Clock className="w-5 h-5 shrink-0 mt-0.5 text-blue-600 animate-pulse" />
+                                <div>
+                                    <p className="font-bold text-blue-950 mb-1">Estimated Completion</p>
+                                    <p className="text-blue-700 leading-relaxed">
+                                        Our analysis team is actively working on your request. Your certified valuation is expected to be ready by <strong className="text-blue-950 font-bold">{formatDate(estimatedDate)}</strong>.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </motion.div>
+
+                    {/* Support & Footer Section */}
+                    <motion.div variants={itemVariants} className="pt-6 border-t border-zinc-100 text-center">
+                        <p className="text-xs text-zinc-400 mb-1.5">Questions regarding this valuation request?</p>
+                        <Button variant="link" className="text-brand-red font-bold text-xs h-auto p-0 hover:text-[#8e161c]">
+                            Contact Support Desk <ArrowUpRight className="w-3 h-3 ml-0.5 inline" />
+                        </Button>
+                    </motion.div>
+                </motion.div>
             </SheetContent>
         </Sheet>
     )
