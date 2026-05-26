@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { valuationSchema, ValuationFormData, STEPS } from "./schema";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Step1Tier } from "./steps/step1-tier";
 import { Step1CompanyInfo } from "./steps/step1-company-info";
 import { Step2Financials } from "./steps/step2-financials";
 import { Step3Review } from "./steps/step3-review";
@@ -26,6 +27,7 @@ export function WizardContainer() {
         resolver: zodResolver(valuationSchema) as any,
         mode: "onChange",
         defaultValues: {
+            tier: "express",
             companyName: "",
             industry: "",
             yearsInOperation: 0,
@@ -96,7 +98,7 @@ export function WizardContainer() {
         localStorage.removeItem(STORAGE_KEY);
         setValuationId(id);
         setDirection(1);
-        setCurrentStep(4);
+        setCurrentStep(5);
     };
 
     // Calculate progress percentage
@@ -141,7 +143,7 @@ export function WizardContainer() {
                 </div>
 
                 {/* Footer Navigation */}
-                {currentStep < 4 && (
+                {currentStep < 5 && (
                     <div className="flex justify-between items-center py-6 border-t border-gray-100">
                         <Button
                             variant="ghost"
@@ -152,14 +154,14 @@ export function WizardContainer() {
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
 
-                        {currentStep < 3 ? (
+                        {currentStep < 4 ? (
                             <Button
                                 onClick={nextStep}
                                 className="bg-brand-red hover:bg-red-700 text-white min-w-[120px]"
                             >
                                 Next <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
-                        ) : currentStep === 3 ? (
+                        ) : currentStep === 4 ? (
                             // Paid button in Step3 component handles transition
                             <></>
                         ) : null}

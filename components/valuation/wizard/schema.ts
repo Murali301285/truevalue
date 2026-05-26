@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const companySchema = z.object({
+    tier: z.string().min(1, "Please select a valuation tier"),
     companyName: z.string().min(1, "Company Name is required"),
     industry: z.string().min(1, "Please select an industry"),
 
@@ -47,8 +48,9 @@ export const valuationSchema = companySchema.merge(financialSchema);
 export type ValuationFormData = z.infer<typeof valuationSchema>;
 
 export const STEPS = [
-    { id: 1, title: "Company Information" },
-    { id: 2, title: "Financial Details" },
-    { id: 3, title: "Review & Payment" },
-    { id: 4, title: "Valuation Report" },
+    { id: 1, title: "Select Tier" },
+    { id: 2, title: "Company Information" },
+    { id: 3, title: "Financial Details" },
+    { id: 4, title: "Review & Payment" },
+    { id: 5, title: "Valuation Report" },
 ];

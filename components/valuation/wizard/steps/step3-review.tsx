@@ -179,22 +179,24 @@ export function Step3Review({ onPaymentSuccess }: { onPaymentSuccess: (id: strin
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                     <div>
                         <h3 className="text-xl font-bold mb-2">Unlock Your Valuation Report</h3>
-                        <p className="text-gray-500 text-sm mb-4">Get instant access to your enterprise value report with industry benchmarks.</p>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <Lock className="w-3 h-3" /> Secure Payment via Razorpay
+                        <p className="text-gray-500 text-sm mb-4">Complete your secure checkout to process the valuation and generate the report.</p>
+                        <div className="flex items-center gap-2 text-xs text-brand-red font-semibold bg-red-50 w-fit px-3 py-1.5 rounded-full border border-red-100">
+                            <Lock className="w-3.5 h-3.5" /> Secure Payment via Razorpay
                         </div>
                     </div>
 
-                    <div className="text-center md:text-right">
-                        <p className="text-sm text-gray-500 mb-1">Total Payable</p>
-                        <h2 className="text-3xl font-extrabold text-gray-900 mb-4">₹499</h2>
+                    <div className="text-center md:text-right shrink-0">
+                        <p className="text-sm text-gray-500 font-medium mb-1">Total Payable</p>
+                        <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
+                            {values.tier === "standard" ? "₹4,999" : values.tier === "certified" ? "₹14,999" : "₹499"}
+                        </h2>
                         <Button
                             size="lg"
-                            className="w-full md:w-auto bg-brand-red hover:bg-red-700 text-white font-bold shadow-lg shadow-red-900/20 active:scale-95 transition-transform"
+                            className="w-full md:w-auto bg-brand-red hover:bg-[#8e161c] text-white font-bold text-base px-8 py-6 rounded-full shadow-xl shadow-red-900/20 active:scale-95 transition-transform"
                             onClick={handlePayment}
                             disabled={isProcessing}
                         >
-                            {isProcessing ? "Processing..." : "Pay Now & View Report"}
+                            {isProcessing ? "Processing Securely..." : "Pay Now & Continue"}
                         </Button>
                     </div>
                 </div>
