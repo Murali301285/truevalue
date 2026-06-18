@@ -128,9 +128,9 @@ export function Step5Report({ valuationId, industries }: { valuationId: string |
 
             {/* Back button */}
             <div className="pt-4 text-center">
-                <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red inline-flex items-center justify-center gap-2 transition-colors">
+                <a href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red inline-flex items-center justify-center gap-2 transition-colors">
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-                </Link>
+                </a>
             </div>
 
             {/* Disclaimers Block */}

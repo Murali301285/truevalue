@@ -1,6 +1,7 @@
 "use client"
 
-import { motion } from "framer-motion"
+import * as framerMotion from "framer-motion";
+const motion = framerMotion.motion;
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"

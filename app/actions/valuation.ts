@@ -41,6 +41,8 @@ export async function saveValuation(data: any) {
             }
         });
 
+        revalidatePath("/dashboard");
+
         return { success: true, id: valuation.id };
     } catch (error) {
         console.error("Error saving valuation:", error);

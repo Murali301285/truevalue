@@ -8,12 +8,12 @@ export async function getPricingPlans() {
         const plans = await prisma.pricingPlan.findMany({
             orderBy: { price: 'asc' }
         });
-        // Convert Decimal to string/number for serialization if needed, 
-        // but Prisma usually handles simple Decimals fine in Next.js server actions now, 
-        // or we map them.
+        
         return plans.map(p => ({
             ...p,
-            price: p.price.toNumber()
+            price: p.price.toNumber(),
+            taxPercentage: p.taxPercentage.toNumber(),
+            totalPrice: p.totalPrice.toNumber(),
         }));
     } catch (error) {
         console.error("Error fetching pricing plans:", error);
@@ -21,12 +21,23 @@ export async function getPricingPlans() {
     }
 }
 
-export async function createPricingPlan(data: { name: string; price: number; currency?: string; features: string[] }) {
+export async function createPricingPlan(data: { 
+    name: string; 
+    price: number; 
+    taxPercentage: number;
+    otherCharges: any[];
+    totalPrice: number;
+    currency?: string; 
+    features: string[] 
+}) {
     try {
         await prisma.pricingPlan.create({
             data: {
                 name: data.name,
                 price: data.price,
+                taxPercentage: data.taxPercentage,
+                otherCharges: data.otherCharges,
+                totalPrice: data.totalPrice,
                 currency: data.currency || "INR",
                 features: data.features,
                 isActive: true
@@ -41,13 +52,25 @@ export async function createPricingPlan(data: { name: string; price: number; cur
     }
 }
 
-export async function updatePricingPlan(id: string, data: { name: string; price: number; currency?: string; features: string[], isActive?: boolean }) {
+export async function updatePricingPlan(id: string, data: { 
+    name: string; 
+    price: number; 
+    taxPercentage: number;
+    otherCharges: any[];
+    totalPrice: number;
+    currency?: string; 
+    features: string[], 
+    isActive?: boolean 
+}) {
     try {
         await prisma.pricingPlan.update({
             where: { id },
             data: {
                 name: data.name,
                 price: data.price,
+                taxPercentage: data.taxPercentage,
+                otherCharges: data.otherCharges,
+                totalPrice: data.totalPrice,
                 currency: data.currency,
                 features: data.features,
                 isActive: data.isActive

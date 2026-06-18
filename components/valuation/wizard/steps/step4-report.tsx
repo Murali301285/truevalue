@@ -119,9 +119,9 @@ export function Step4Report({ valuationId }: { valuationId: string | null }) {
             </Link>
 
             <div className="pt-8 border-t border-gray-200">
-                <Link href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red flex items-center justify-center gap-2">
+                <a href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red flex items-center justify-center gap-2">
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
-                </Link>
+                </a>
             </div>
         </motion.div>
     );

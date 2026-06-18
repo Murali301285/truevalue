@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Check, BarChart, FileText, ArrowRight, Shield, Zap, Lock, TrendingUp, ClipboardCheck, Search, Clock, LogIn, FileEdit, CreditCard, Download } from "lucide-react";
-import { motion } from "framer-motion";
+import * as framerMotion from "framer-motion";
+const motion = framerMotion.motion;
 import { NotifyMeModal } from "@/components/landing/notify-me-modal";
 import { FeatureCard } from "@/components/landing/feature-card";
 import { HeroSection } from "@/components/landing/hero-section";
@@ -128,7 +129,7 @@ export default function LandingPage() {
                     {/* Standard Plan */}
                     <div className="relative bg-white border border-gray-200 rounded-3xl p-8 hover:border-gray-300 transition-colors opacity-80">
                         <div className="absolute -top-3 right-6">
-                            <span className="bg-white text-yellow-600 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide">Coming Soon</span>
+                            <span className="bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide shadow-sm">Coming Soon</span>
                         </div>
                         <div className="mb-6">
                             <div className="flex items-center gap-2 mb-2">
@@ -163,7 +164,7 @@ export default function LandingPage() {
                         <NotifyMeModal
                             tier="Standard"
                             trigger={
-                                <Button className="w-full h-12 bg-gray-100/80 text-gray-500 font-bold rounded-xl hover:bg-gray-200 hover:text-gray-700 transition-all border border-transparent hover:border-gray-300">
+                                <Button className="w-full h-12 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 hover:text-black transition-all border border-gray-200 shadow-sm">
                                     Notify Me
                                 </Button>
                             }
@@ -173,7 +174,7 @@ export default function LandingPage() {
                     {/* Certified Plan */}
                     <div className="relative bg-white border border-gray-200 rounded-3xl p-8 hover:border-gray-300 transition-colors opacity-80">
                         <div className="absolute -top-3 right-6">
-                            <span className="bg-white text-yellow-600 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide">Coming Soon</span>
+                            <span className="bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide shadow-sm">Coming Soon</span>
                         </div>
                         <div className="mb-6">
                             <div className="flex items-center gap-2 mb-2">
@@ -208,7 +209,7 @@ export default function LandingPage() {
                         <NotifyMeModal
                             tier="Certified"
                             trigger={
-                                <Button className="w-full h-12 bg-gray-100/80 text-gray-500 font-bold rounded-xl hover:bg-gray-200 hover:text-gray-700 transition-all border border-transparent hover:border-gray-300">
+                                <Button className="w-full h-12 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-gray-200 hover:text-black transition-all border border-gray-200 shadow-sm">
                                     Notify Me
                                 </Button>
                             }

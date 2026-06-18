@@ -184,6 +184,10 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
     const handlePaymentSuccess = (id: string, calculatedEV: number) => {
         setValuationId(id);
         
+        // Clear the draft from local storage upon successful completion
+        localStorage.removeItem(userStorageKey);
+        setHasDraft(false);
+
         // Final transition to Step 5 (Report)
         setDirection(1);
         setCurrentStep(5);

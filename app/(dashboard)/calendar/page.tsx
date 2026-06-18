@@ -1,29 +1,26 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
-import { format, addMonths, subMonths, getYear, getMonth, startOfMonth, getDay, endOfMonth } from "date-fns";
+import { format, addMonths, subMonths, getYear, getMonth, startOfMonth, getDay } from "date-fns";
 import { getCalendarData, DailyCashSummary } from "@/app/actions/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, Loader2, FileText, IndianRupee } from "lucide-react";
 import { formatCurrency } from "@/lib/logic";
+import { useSession } from "next-auth/react";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function CalendarPage() {
+    const { data: session } = useSession();
+    const isAdmin = (session?.user as any)?.role === "ADMIN";
+
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [companyId, setCompanyId] = useState("ALL");
     const [data, setData] = useState<DailyCashSummary[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Modal State
-    const [selectedDay, setSelectedDay] = useState<DailyCashSummary | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
     useEffect(() => {
         fetchData();
-    }, [currentDate, companyId]);
+    }, [currentDate]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -31,18 +28,13 @@ export default function CalendarPage() {
         const year = getYear(currentDate);
 
         // Server Action
-        const result = await getCalendarData(month, year, companyId);
+        const result = await getCalendarData(month, year);
         setData(result);
         setLoading(false);
     };
 
     const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
     const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-
-    const handleDayClick = (day: DailyCashSummary) => {
-        setSelectedDay(day);
-        setIsModalOpen(true);
-    };
 
     // Grid Logic
     const monthStart = startOfMonth(currentDate);
@@ -52,27 +44,15 @@ export default function CalendarPage() {
     const blanks = Array.from({ length: startDayIndex });
 
     return (
-        <div className="container mx-auto py-8 h-screen flex flex-col">
+        <div className="container mx-auto py-8 h-[calc(100vh-4rem)] flex flex-col">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-zinc-900">Financial Calendar</h1>
-                    <p className="text-zinc-500">Track monthly cash flow rhythm.</p>
+                    <p className="text-zinc-500">Track monthly cash flow and platform revenue.</p>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <Select value={companyId} onValueChange={setCompanyId}>
-                        <SelectTrigger className="w-[200px] bg-white">
-                            <SelectValue placeholder="All Companies" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="ALL">All Companies</SelectItem>
-                            <SelectItem value="1">TechFlow Solutions</SelectItem>
-                            <SelectItem value="2">GreenLeaf Logistics</SelectItem>
-                            {/* In real app, fetch companies list */}
-                        </SelectContent>
-                    </Select>
-
                     <div className="flex items-center bg-white border border-zinc-200 rounded-md shadow-sm">
                         <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
                             <ChevronLeft className="h-4 w-4" />
@@ -88,7 +68,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex-1 bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+            <div className="flex-1 bg-white border border-zinc-200 rounded-xl shadow-sm overflow-hidden flex flex-col relative">
                 {/* Weekday Header */}
                 <div className="grid grid-cols-7 border-b border-zinc-200 bg-zinc-50">
                     {WEEKDAYS.map(day => (
@@ -100,88 +80,84 @@ export default function CalendarPage() {
 
                 {/* Days Grid */}
                 {loading ? (
-                    <div className="flex-1 flex items-center justify-center">
-                        <Loader2 className="h-10 w-10 animate-spin text-zinc-300" />
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50 backdrop-blur-sm">
+                        <Loader2 className="h-10 w-10 animate-spin text-zinc-400" />
                     </div>
-                ) : (
-                    <div className="grid grid-cols-7 flex-1 auto-rows-fr">
-                        {/* Blanks */}
-                        {blanks.map((_, i) => (
-                            <div key={`blank-${i}`} className="bg-zinc-50/30 border-b border-r border-zinc-100 min-h-[100px]" />
-                        ))}
+                ) : null}
+                
+                <div className="grid grid-cols-7 flex-1 auto-rows-fr relative">
+                    {/* Blanks */}
+                    {blanks.map((_, i) => (
+                        <div key={`blank-${i}`} className="bg-zinc-50/30 border-b border-r border-zinc-100 min-h-[100px]" />
+                    ))}
 
-                        {/* Data Cells */}
-                        {data.map((day) => {
-                            const showIn = day.inflow > 0;
-                            const showOut = day.outflow > 0;
-                            return (
-                                <div
-                                    key={day.date.toISOString()}
-                                    onClick={() => handleDayClick(day)}
-                                    className="border-b border-r border-zinc-100 p-2 min-h-[100px] hover:bg-zinc-50 cursor-pointer transition-colors relative group"
-                                >
-                                    <span className="text-zinc-400 font-medium text-sm block mb-2">{format(day.date, "d")}</span>
+                    {/* Data Cells */}
+                    {data.map((day) => {
+                        const showIn = day.inflow > 0;
+                        const showOut = day.outflow > 0;
+                        const showReports = day.reportsCount > 0;
 
-                                    <div className="space-y-1">
-                                        {showIn && (
-                                            <div className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-bold border border-emerald-100 flex justify-between">
-                                                <span>In</span>
-                                                <span>+{formatCurrency(day.inflow).split('.')[0].replace('₹', '')}</span>
+                        return (
+                            <div
+                                key={day.date.toISOString()}
+                                className="border-b border-r border-zinc-100 p-2 min-h-[120px] hover:bg-zinc-50 transition-colors relative group"
+                            >
+                                <span className="text-zinc-400 font-medium text-sm block mb-2">{format(day.date, "d")}</span>
+
+                                <div className="space-y-1.5 relative">
+                                    {/* Platform Reports Data */}
+                                    {showReports && isAdmin && (
+                                        <>
+                                            <div className="text-xs bg-blue-50 text-blue-700 px-1.5 py-1 rounded font-bold border border-blue-100 flex justify-between items-center cursor-default">
+                                                <span className="flex items-center"><FileText className="w-3 h-3 mr-1" /> Reports</span>
+                                                <span>{day.reportsCount}</span>
                                             </div>
-                                        )}
-                                        {showOut && (
-                                            <div className="text-xs bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-bold border border-red-100 flex justify-between">
-                                                <span>Out</span>
-                                                <span>-{formatCurrency(day.outflow).split('.')[0].replace('₹', '')}</span>
+                                            <div className="text-xs bg-purple-50 text-purple-700 px-1.5 py-1 rounded font-bold border border-purple-100 flex justify-between items-center cursor-default">
+                                                <span className="flex items-center"><IndianRupee className="w-3 h-3 mr-1" /> Revenue</span>
+                                                <span>₹{day.platformRevenue.toLocaleString('en-IN')}</span>
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
 
-            {/* Transaction Detail Modal */}
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>{selectedDay && format(selectedDay.date, "MMMM do, yyyy")}</DialogTitle>
-                        <DialogDescription>
-                            Daily Transaction Summary
-                        </DialogDescription>
-                    </DialogHeader>
+                                            {/* Custom Hover Tooltip */}
+                                            <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-zinc-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-3 pointer-events-none">
+                                                <div className="text-xs font-bold text-zinc-800 mb-2 border-b border-zinc-100 pb-2">
+                                                    Reports on {format(day.date, "MMM do, yyyy")}
+                                                </div>
+                                                <div className="space-y-2 max-h-40 overflow-y-auto">
+                                                    {day.reports.map((report: any) => (
+                                                        <div key={report.id} className="flex justify-between items-start text-xs">
+                                                            <div className="flex flex-col">
+                                                                <span className="font-medium text-zinc-700 truncate w-36" title={report.order?.userEmail}>
+                                                                    {report.order?.userEmail || "Unknown User"}
+                                                                </span>
+                                                                <span className="text-[10px] text-zinc-400 font-mono">{report.razorpayPaymentId}</span>
+                                                            </div>
+                                                            <span className="font-bold text-emerald-600">₹{Number(report.amount)}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
 
-                    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        {selectedDay?.transactions.length === 0 ? (
-                            <p className="text-center text-zinc-500 py-4">No transactions recorded.</p>
-                        ) : (
-                            selectedDay?.transactions.map((tx: any) => (
-                                <div key={tx.id} className="flex justify-between items-center border-b border-zinc-100 pb-2 last:border-0">
-                                    <div>
-                                        <p className="font-medium text-sm">{tx.description || "Unspecified"}</p>
-                                        <div className="flex gap-2 text-xs text-zinc-400">
-                                            <span className="uppercase">{tx.company.name}</span> &bull; <span>{tx.category}</span>
+                                    {/* Company Cash Flow Data */}
+                                    {showIn && (
+                                        <div className="text-xs bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-medium border border-emerald-100 flex justify-between">
+                                            <span>In</span>
+                                            <span>+{formatCurrency(day.inflow).split('.')[0].replace('₹', '')}</span>
                                         </div>
-                                    </div>
-                                    <span className={`font-bold text-sm ${tx.type === 'INFLOW' ? 'text-emerald-600' : 'text-red-600'}`}>
-                                        {tx.type === 'INFLOW' ? '+' : '-'}{formatCurrency(Number(tx.amount))}
-                                    </span>
+                                    )}
+                                    {showOut && (
+                                        <div className="text-xs bg-red-50 text-red-700 px-1.5 py-0.5 rounded font-medium border border-red-100 flex justify-between">
+                                            <span>Out</span>
+                                            <span>-{formatCurrency(day.outflow).split('.')[0].replace('₹', '')}</span>
+                                        </div>
+                                    )}
                                 </div>
-                            ))
-                        )}
-                    </div>
-
-                    {/* Summary Footer */}
-                    {(selectedDay?.inflow || 0) > 0 || (selectedDay?.outflow || 0) > 0 ? (
-                        <div className="bg-zinc-50 p-3 rounded-lg flex justify-between text-sm">
-                            <div className="text-emerald-600 font-bold">Total In: {formatCurrency(selectedDay?.inflow || 0)}</div>
-                            <div className="text-red-600 font-bold">Total Out: {formatCurrency(selectedDay?.outflow || 0)}</div>
-                        </div>
-                    ) : null}
-                </DialogContent>
-            </Dialog>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
         </div>
     );
 }

@@ -17,7 +17,9 @@ import {
     ChevronLeft,
     ChevronRight,
     Calculator,
-    Percent
+    Percent,
+    CreditCard,
+    Tag
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -74,6 +76,7 @@ export function Sidebar({ className }: SidebarProps) {
                 <NavLink href="/dashboard" icon={<LayoutDashboard className="w-4 h-4" />} label="Home" collapsed={isCollapsed} active={pathname === "/dashboard"} />
                 <NavLink href="/calendar" icon={<CalendarDays className="w-4 h-4" />} label="Calendar" collapsed={isCollapsed} active={pathname === "/calendar"} />
                 <NavLink href="/reports" icon={<FileBarChart className="w-4 h-4" />} label="Reports" collapsed={isCollapsed} active={pathname === "/reports"} />
+                <NavLink href="/payments" icon={<CreditCard className="w-4 h-4" />} label="Payment History" collapsed={isCollapsed} active={pathname === "/payments"} />
 
                 {/* Configuration Group - Admin Only */}
                 {showConfig ? (
@@ -88,6 +91,7 @@ export function Sidebar({ className }: SidebarProps) {
                             <NavLink href="/config/user" icon={<Users className="w-4 h-4" />} label="Users" collapsed={false} active={pathname.includes("/config/user")} />
                             <NavLink href="/config/industry" icon={<Building2 className="w-4 h-4" />} label="Industry / Sector" collapsed={false} active={pathname.includes("/config/industry")} />
                             <NavLink href="/config/pricing" icon={<Wallet className="w-4 h-4" />} label="Pricing" collapsed={false} active={pathname.includes("/config/pricing")} />
+                            <NavLink href="/config/offers" icon={<Tag className="w-4 h-4" />} label="Offers" collapsed={false} active={pathname.includes("/config/offers")} />
                             <NavLink href="/config/payment" icon={<Wallet className="w-4 h-4" />} label="Payment" collapsed={false} active={pathname.includes("/config/payment")} />
                             <NavLink href="/config/ai-model" icon={<Calculator className="w-4 h-4" />} label="AI Model" collapsed={false} active={pathname.includes("/config/ai-model")} />
                             <NavLink href="/config/base-multiplier" icon={<Percent className="w-4 h-4" />} label="Base Multiplier" collapsed={false} active={pathname.includes("/config/base-multiplier")} />
