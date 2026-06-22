@@ -5,7 +5,13 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
 export async function getCompanies() {
+    const session = await auth();
+    if (!session?.user) return [];
+    
+    const isAdmin = (session.user as any).role === 'ADMIN';
+    
     return await prisma.company.findMany({
+        where: isAdmin ? {} : { parentId: session.user.id },
         orderBy: { createdAt: 'desc' }
     });
 }
@@ -45,7 +51,6 @@ export async function createCompany(data: any) {
     } catch (error: any) {
         console.error("Create Company Error:", error);
         if (error.code === 'P2002') {
-            // Check which field caused the violation if possible, or just generic
             const target = error.meta?.target?.[0] || 'Field';
             return { success: false, error: `${target} already exists. Please use a unique value.` };
         }
@@ -55,6 +60,15 @@ export async function createCompany(data: any) {
 
 export async function updateCompany(id: string, data: any) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        
+        const isAdmin = (session.user as any).role === 'ADMIN';
+        const existing = await prisma.company.findUnique({ where: { id } });
+        
+        if (!existing) throw new Error("Company not found");
+        if (!isAdmin && existing.parentId !== session.user.id) throw new Error("Unauthorized to update this company");
+
         await prisma.company.update({
             where: { id },
             data: {
@@ -87,6 +101,15 @@ export async function updateCompany(id: string, data: any) {
 
 export async function deleteCompany(id: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        
+        const isAdmin = (session.user as any).role === 'ADMIN';
+        const existing = await prisma.company.findUnique({ where: { id } });
+        
+        if (!existing) throw new Error("Company not found");
+        if (!isAdmin && existing.parentId !== session.user.id) throw new Error("Unauthorized to delete this company");
+
         await prisma.company.delete({ where: { id } });
         revalidatePath('/config/company');
         return { success: true };

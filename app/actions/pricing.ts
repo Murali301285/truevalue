@@ -2,6 +2,14 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 export async function getPricingPlans() {
     try {
@@ -31,6 +39,7 @@ export async function createPricingPlan(data: {
     features: string[] 
 }) {
     try {
+        await requireAdmin();
         await prisma.pricingPlan.create({
             data: {
                 name: data.name,
@@ -46,9 +55,9 @@ export async function createPricingPlan(data: {
 
         revalidatePath("/config/pricing");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating pricing plan:", error);
-        return { success: false, error: "Failed to create pricing plan." };
+        return { success: false, error: error.message || "Failed to create pricing plan." };
     }
 }
 
@@ -63,6 +72,7 @@ export async function updatePricingPlan(id: string, data: {
     isActive?: boolean 
 }) {
     try {
+        await requireAdmin();
         await prisma.pricingPlan.update({
             where: { id },
             data: {
@@ -79,28 +89,30 @@ export async function updatePricingPlan(id: string, data: {
 
         revalidatePath("/config/pricing");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating pricing plan:", error);
-        return { success: false, error: "Failed to update pricing plan." };
+        return { success: false, error: error.message || "Failed to update pricing plan." };
     }
 }
 
 export async function deletePricingPlan(id: string) {
     try {
+        await requireAdmin();
         await prisma.pricingPlan.delete({
             where: { id }
         });
 
         revalidatePath("/config/pricing");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting pricing plan:", error);
-        return { success: false, error: "Failed to delete pricing plan." };
+        return { success: false, error: error.message || "Failed to delete pricing plan." };
     }
 }
 
 export async function togglePricingPlanStatus(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin();
         await prisma.pricingPlan.update({
             where: { id },
             data: { isActive: !currentStatus }
@@ -108,8 +120,8 @@ export async function togglePricingPlanStatus(id: string, currentStatus: boolean
 
         revalidatePath("/config/pricing");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error toggling status:", error);
-        return { success: false, error: "Failed to update status." };
+        return { success: false, error: error.message || "Failed to update status." };
     }
 }

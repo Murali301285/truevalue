@@ -2,6 +2,19 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function checkCompanyOwnership(companyId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const isAdmin = (session.user as any).role === 'ADMIN';
+    if (!isAdmin) {
+        const company = await prisma.company.findUnique({ where: { id: companyId } });
+        if (!company || company.parentId !== session.user.id) {
+            throw new Error("Unauthorized: You do not own this company");
+        }
+    }
+}
 
 // Helper to serialize Decimal to number (or string if preferred, but UI expects number)
 const serializeDecimal = (obj: any) => {
@@ -21,6 +34,7 @@ const serializeDecimal = (obj: any) => {
 // Upsert Weekly Stat (Create or Update based on company+week)
 export async function upsertWeeklyStat(data: any) {
     try {
+        await checkCompanyOwnership(data.companyId);
         const weekDate = new Date(data.weekEnding);
 
         await prisma.weeklyStat.upsert({
@@ -74,6 +88,7 @@ export async function upsertWeeklyStat(data: any) {
 // Get stat for a specific week
 export async function getWeeklyStat(companyId: string, dateStr: string) {
     try {
+        await checkCompanyOwnership(companyId);
         const date = new Date(dateStr);
         const stat = await prisma.weeklyStat.findUnique({
             where: {
@@ -93,6 +108,7 @@ export async function getWeeklyStat(companyId: string, dateStr: string) {
 // Get previous week's stat (to find opening balances)
 export async function getPreviousWeekStat(companyId: string, currentWeekDateStr: string) {
     try {
+        await checkCompanyOwnership(companyId);
         const currentDate = new Date(currentWeekDateStr);
         // Find the most recent record before this date
         const prevStat = await prisma.weeklyStat.findFirst({
@@ -124,11 +140,18 @@ export async function getWeeklyStatsHistory({
     toDate?: Date;
 }) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
         const whereClause: any = {};
 
         // 1. Company Filter
         if (companyId && companyId !== 'ALL') {
+            await checkCompanyOwnership(companyId);
             whereClause.companyId = companyId;
+        } else if (!isAdmin) {
+            whereClause.company = { parentId: session.user.id };
         }
 
         // 2. Date Range Filter
@@ -169,6 +192,7 @@ export async function getWeeklyStatsHistory({
 // Get the very latest stat for a company
 export async function getLatestWeeklyStat(companyId: string) {
     try {
+        await checkCompanyOwnership(companyId);
         const stat = await prisma.weeklyStat.findFirst({
             where: { companyId },
             orderBy: { weekEnding: 'desc' }

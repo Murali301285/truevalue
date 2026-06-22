@@ -10,9 +10,11 @@ import { updateUserProfile } from "@/app/actions/user"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Camera, EyeIcon, EyeOffIcon } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useRouter } from "next/navigation"
 
 export function ProfileForm({ user }: { user: any }) {
     const { update } = useSession() // Keep update for refreshing session if needed
+    const router = useRouter()
     const { toast } = useToast()
     // Remove session.user usage, use props.user
 
@@ -22,10 +24,6 @@ export function ProfileForm({ user }: { user: any }) {
     const [name, setName] = useState(user.name || "")
     const [businessName, setBusinessName] = useState(user.businessName || "")
     const [mobileNumber, setMobileNumber] = useState(user.mobileNumber || "") // "Pre-filled" if exists
-
-    // Consents
-    const [termsAccepted, setTermsAccepted] = useState(user.termsAccepted || false)
-    const [dpdpAccepted, setDpdpAccepted] = useState(user.dpdpAccepted || false)
 
     // Password Fields
     const [oldPassword, setOldPassword] = useState("")
@@ -57,19 +55,21 @@ export function ProfileForm({ user }: { user: any }) {
             return;
         }
 
-        if (newPassword && !oldPassword) {
-            toast({ title: "Error", description: "Please enter your current password to change it.", variant: "destructive" });
-            return;
-        }
+        if (newPassword) {
+            if (!oldPassword) {
+                toast({ title: "Error", description: "Please enter your current password to change it.", variant: "destructive" });
+                return;
+            }
 
-        if (!termsAccepted) {
-            toast({ title: "Error", description: "You must accept the Terms and Conditions.", variant: "destructive" });
-            return;
-        }
-
-        if (!dpdpAccepted) {
-            toast({ title: "Error", description: "You must provide DPDP consent.", variant: "destructive" });
-            return;
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
+            if (!passwordRegex.test(newPassword)) {
+                toast({ 
+                    title: "Invalid Password", 
+                    description: "Password must be at least 6 characters long and include a number, a special character, an uppercase letter, and a lowercase letter.", 
+                    variant: "destructive" 
+                });
+                return;
+            }
         }
 
         setIsLoading(true);
@@ -79,8 +79,6 @@ export function ProfileForm({ user }: { user: any }) {
                 name,
                 businessName,
                 mobileNumber,
-                termsAccepted,
-                dpdpAccepted,
                 oldPassword: oldPassword || undefined,
                 newPassword: newPassword || undefined,
                 image: previewImage || undefined
@@ -91,8 +89,9 @@ export function ProfileForm({ user }: { user: any }) {
                 // Update session
                 await update({
                     name: name,
-                    image: previewImage || user.image
+                    image: res.imageUrl || user.image
                 }); // Basic session update
+                router.refresh();
 
                 // Clear password fields
                 setOldPassword("");
@@ -168,52 +167,12 @@ export function ProfileForm({ user }: { user: any }) {
                                 onChange={e => setMobileNumber(e.target.value)}
                                 placeholder="Mobile Number"
                             />
-                            <p className="text-xs text-muted-foreground">This number is pre-filled from your registration details.</p>
                         </div>
 
                         <div className="grid gap-2">
                             <Label>Email Address (Read Only)</Label>
                             <Input value={user.email || ""} disabled className="bg-zinc-50" />
                         </div>
-                    </CardContent>
-                </Card>
-
-                {/* Consents Card */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Consents & Agreements</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                id="terms"
-                                className="h-4 w-4 rounded border-gray-300 text-zinc-900 focus:ring-zinc-900"
-                                checked={termsAccepted}
-                                onChange={e => setTermsAccepted(e.target.checked)}
-                            />
-                            <Label htmlFor="terms" className="font-normal">
-                                I accept the <a href="#" className="underline text-blue-600">Terms and Conditions</a>
-                            </Label>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="checkbox"
-                                id="dpdp"
-                                className="h-4 w-4 rounded border-gray-300 text-zinc-900 focus:ring-zinc-900"
-                                checked={dpdpAccepted}
-                                onChange={e => setDpdpAccepted(e.target.checked)}
-                            />
-                            <Label htmlFor="dpdp" className="font-normal">
-                                I provide my explicit consent under the DPDP Act.
-                            </Label>
-                        </div>
-                        {user.dpdpAcceptedAt && (
-                            <p className="text-xs text-muted-foreground ml-6">
-                                Consent recorded on: {new Date(user.dpdpAcceptedAt).toLocaleString()}
-                            </p>
-                        )}
                     </CardContent>
                 </Card>
 
@@ -231,6 +190,7 @@ export function ProfileForm({ user }: { user: any }) {
                                 value={oldPassword}
                                 onChange={e => setOldPassword(e.target.value)}
                                 placeholder="Required to set new password"
+                                autoComplete="new-password"
                             />
                         </div>
                         <div className="grid gap-2">
@@ -240,6 +200,7 @@ export function ProfileForm({ user }: { user: any }) {
                                     type={showPassword ? "text" : "password"}
                                     value={newPassword}
                                     onChange={e => setNewPassword(e.target.value)}
+                                    autoComplete="new-password"
                                 />
                                 <Button
                                     type="button"
@@ -262,6 +223,7 @@ export function ProfileForm({ user }: { user: any }) {
                                 type="password"
                                 value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
+                                autoComplete="new-password"
                             />
                         </div>
                     </CardContent>

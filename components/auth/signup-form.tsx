@@ -16,18 +16,69 @@ export function SignupForm() {
     const [email, setEmail] = useState("");
     const [mobileNumber, setMobileNumber] = useState("");
     const [password, setPassword] = useState("");
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [dpdpAccepted, setDpdpAccepted] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Validations
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast({
+                title: "Invalid Email",
+                description: "Please enter a valid email address.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const cleanMobile = mobileNumber.replace(/[\s\-+()]/g, '');
+        if (!/^\d{7,15}$/.test(cleanMobile)) {
+            toast({
+                title: "Invalid Mobile Number",
+                description: "Please enter a valid mobile number (7-15 digits).",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (password.length < 6) {
+            toast({
+                title: "Invalid Password",
+                description: "Password must be at least 6 characters long.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!termsAccepted) {
+            toast({
+                title: "Terms and Conditions",
+                description: "You must agree to the Terms & Conditions.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!dpdpAccepted) {
+            toast({
+                title: "DPDP Consent",
+                description: "You must provide your explicit consent under the DPDP Act.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         setIsLoading(true);
 
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, mobileNumber, password }),
+                body: JSON.stringify({ name, email, mobileNumber, password, termsAccepted, dpdpAccepted }),
             });
 
             const data = await res.json();
@@ -69,7 +120,7 @@ export function SignupForm() {
                         <Input
                             id="name"
                             type="text"
-                            placeholder="John Doe"
+                            placeholder="Your Name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             required
@@ -87,10 +138,11 @@ export function SignupForm() {
                         <Input
                             id="email"
                             type="email"
-                            placeholder="name@company.com"
+                            placeholder="Your Email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             required
+                            autoComplete="off"
                             className="pl-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
                         />
                     </div>
@@ -107,8 +159,9 @@ export function SignupForm() {
                             type="tel"
                             placeholder="+91 98765 43210"
                             value={mobileNumber}
-                            onChange={(e) => setMobileNumber(e.target.value)}
+                            onChange={(e) => setMobileNumber(e.target.value.replace(/[^0-9+\s()\-]/g, ''))}
                             required
+                            autoComplete="off"
                             className="pl-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
                         />
                     </div>
@@ -128,6 +181,7 @@ export function SignupForm() {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             minLength={6}
+                            autoComplete="new-password"
                             className="pl-10 pr-10 h-11 bg-gray-50 border-gray-200 focus-visible:ring-brand-red focus-visible:border-brand-red"
                         />
                         <button
@@ -144,9 +198,34 @@ export function SignupForm() {
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-2 pt-2 pb-2">
-                    <input type="checkbox" id="terms" required className="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" />
-                    <label htmlFor="terms" className="text-gray-500 font-medium text-sm">I agree to the <a href="/terms" target="_blank" className="text-brand-red hover:underline">Terms & Conditions</a></label>
+                <div className="space-y-4 pt-2 pb-2">
+                    <div className="flex items-start space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="terms" 
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            required 
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" 
+                        />
+                        <label htmlFor="terms" className="text-gray-500 font-medium text-sm leading-snug">
+                            I accept the <a href="#" className="text-brand-red hover:underline">Terms and Conditions</a>
+                        </label>
+                    </div>
+
+                    <div className="flex items-start space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="dpdp" 
+                            checked={dpdpAccepted}
+                            onChange={(e) => setDpdpAccepted(e.target.checked)}
+                            required 
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" 
+                        />
+                        <label htmlFor="dpdp" className="text-gray-500 font-medium text-sm leading-snug">
+                            I provide my explicit consent under the DPDP Act.
+                        </label>
+                    </div>
                 </div>
 
                 <Button type="submit" className="w-full h-11 text-base font-bold bg-[#a81b21] hover:bg-[#8e161c] shadow-lg shadow-red-100" disabled={isLoading}>

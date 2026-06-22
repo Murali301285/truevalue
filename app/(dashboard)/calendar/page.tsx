@@ -106,34 +106,40 @@ export default function CalendarPage() {
 
                                 <div className="space-y-1.5 relative">
                                     {/* Platform Reports Data */}
-                                    {showReports && isAdmin && (
+                                    {showReports && (
                                         <>
                                             <div className="text-xs bg-blue-50 text-blue-700 px-1.5 py-1 rounded font-bold border border-blue-100 flex justify-between items-center cursor-default">
                                                 <span className="flex items-center"><FileText className="w-3 h-3 mr-1" /> Reports</span>
                                                 <span>{day.reportsCount}</span>
                                             </div>
-                                            <div className="text-xs bg-purple-50 text-purple-700 px-1.5 py-1 rounded font-bold border border-purple-100 flex justify-between items-center cursor-default">
-                                                <span className="flex items-center"><IndianRupee className="w-3 h-3 mr-1" /> Revenue</span>
-                                                <span>₹{day.platformRevenue.toLocaleString('en-IN')}</span>
-                                            </div>
+                                            {isAdmin && (
+                                                <div className="text-xs bg-purple-50 text-purple-700 px-1.5 py-1 rounded font-bold border border-purple-100 flex justify-between items-center cursor-default">
+                                                    <span className="flex items-center"><IndianRupee className="w-3 h-3 mr-1" /> Revenue</span>
+                                                    <span>₹{day.platformRevenue.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
 
                                             {/* Custom Hover Tooltip */}
-                                            <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-lg shadow-xl border border-zinc-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 p-3 pointer-events-none">
-                                                <div className="text-xs font-bold text-zinc-800 mb-2 border-b border-zinc-100 pb-2">
-                                                    Reports on {format(day.date, "MMM do, yyyy")}
-                                                </div>
-                                                <div className="space-y-2 max-h-40 overflow-y-auto">
-                                                    {day.reports.map((report: any) => (
-                                                        <div key={report.id} className="flex justify-between items-start text-xs">
-                                                            <div className="flex flex-col">
-                                                                <span className="font-medium text-zinc-700 truncate w-36" title={report.order?.userEmail}>
-                                                                    {report.order?.userEmail || "Unknown User"}
-                                                                </span>
-                                                                <span className="text-[10px] text-zinc-400 font-mono">{report.razorpayPaymentId}</span>
+                                            <div className="absolute left-0 top-full pt-2 w-64 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                                <div className="bg-white rounded-lg shadow-xl border border-zinc-200 p-3">
+                                                    <div className="text-xs font-bold text-zinc-800 mb-2 border-b border-zinc-100 pb-2">
+                                                        Reports on {format(day.date, "MMM do, yyyy")}
+                                                    </div>
+                                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                                        {day.reports.map((report: any) => (
+                                                            <div key={report.id} className="flex justify-between items-start text-xs">
+                                                                <div className="flex flex-col">
+                                                                    <span className="font-medium text-zinc-700 truncate w-36" title={report.order?.userEmail}>
+                                                                        {report.order?.userEmail || "Unknown User"}
+                                                                    </span>
+                                                                    <span className="text-[10px] text-zinc-400 font-mono">{report.razorpayPaymentId}</span>
+                                                                </div>
+                                                                {isAdmin && (
+                                                                    <span className="font-bold text-emerald-600">₹{Number(report.amount)}</span>
+                                                                )}
                                                             </div>
-                                                            <span className="font-bold text-emerald-600">₹{Number(report.amount)}</span>
-                                                        </div>
-                                                    ))}
+                                                        ))}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </>

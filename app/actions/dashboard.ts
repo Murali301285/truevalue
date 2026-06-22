@@ -3,11 +3,20 @@
 import { prisma } from "@/lib/db";
 import { calculateRealSMEIndex, calculateRunwayDays, PipelineStatus } from "@/lib/logic";
 import { CompanyHealthData } from "@/types/dashboard";
+import { auth } from "@/auth";
 
 export async function getPortfolioHealth(): Promise<{ success: boolean; data?: CompanyHealthData[]; error?: string }> {
     try {
+        const session = await auth();
+        if (!session?.user) {
+            throw new Error("Unauthorized");
+        }
+
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
         // Fetch companies with latest stats
         const companies = await prisma.company.findMany({
+            where: isAdmin ? {} : { parentId: session.user.id },
             include: {
                 weeklyStats: {
                     orderBy: { weekEnding: 'desc' },

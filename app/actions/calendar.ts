@@ -20,12 +20,21 @@ export async function getCalendarData(month: number, year: number) {
     const start = new Date(year, month - 1, 1);
     const end = endOfMonth(start);
 
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
+    const isAdmin = (session?.user as any)?.role === "ADMIN";
+
     const whereClause: any = {
         date: {
             gte: start,
             lte: end,
         },
     };
+
+    if (!isAdmin) {
+        whereClause.company = { parentId: session.user.id };
+    }
 
     // 1. Fetch Cash Transactions (if any exist for platform)
     const cashTransactions = await prisma.cashTransaction.findMany({
@@ -36,26 +45,27 @@ export async function getCalendarData(month: number, year: number) {
         orderBy: { date: 'asc' }
     });
 
-    const session = await auth();
-    const isAdmin = (session?.user as any)?.role === "ADMIN";
-
-    // 2. Fetch Payment Transactions (Platform Sales/Reports) - Admin ONLY
+    // 2. Fetch Payment Transactions (Platform Sales/Reports)
     let paymentTransactions: any[] = [];
-    if (isAdmin) {
-        paymentTransactions = await prisma.paymentTransaction.findMany({
-            where: {
-                status: "success",
-                createdAt: {
-                    gte: start,
-                    lte: end,
-                }
-            },
-            include: {
-                order: { select: { userEmail: true } }
-            },
-            orderBy: { createdAt: 'asc' }
-        });
+    const paymentWhereClause: any = {
+        status: "success",
+        createdAt: {
+            gte: start,
+            lte: end,
+        }
+    };
+
+    if (!isAdmin) {
+        paymentWhereClause.order = { userEmail: session.user.email };
     }
+
+    paymentTransactions = await prisma.paymentTransaction.findMany({
+        where: paymentWhereClause,
+        include: {
+            order: { select: { userEmail: true } }
+        },
+        orderBy: { createdAt: 'asc' }
+    });
 
     // Group by Date
     const grouped: Record<string, DailyCashSummary> = {};

@@ -2,6 +2,19 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function checkCompanyOwnership(companyId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const isAdmin = (session.user as any).role === 'ADMIN';
+    if (!isAdmin) {
+        const company = await prisma.company.findUnique({ where: { id: companyId } });
+        if (!company || company.parentId !== session.user.id) {
+            throw new Error("Unauthorized: You do not own this company");
+        }
+    }
+}
 
 // Helper to serialize Decimal to number for UI
 const serializeDecimal = (obj: any) => {
@@ -25,6 +38,7 @@ const serializeDecimal = (obj: any) => {
 
 export async function getMonthlyStat(companyId: string, month: number, year: number) {
     try {
+        await checkCompanyOwnership(companyId);
         const stat = await prisma.monthlyStat.findUnique({
             where: {
                 companyId_month_year: {
@@ -43,6 +57,7 @@ export async function getMonthlyStat(companyId: string, month: number, year: num
 
 export async function upsertMonthlyStat(data: any) {
     try {
+        await checkCompanyOwnership(data.companyId);
         await prisma.monthlyStat.upsert({
             where: {
                 companyId_month_year: {

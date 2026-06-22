@@ -2,6 +2,14 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 export async function getIndustries() {
     try {
@@ -17,6 +25,7 @@ export async function getIndustries() {
 
 export async function createIndustry(data: { name: string; remarks?: string }) {
     try {
+        await requireAdmin();
         const existing = await prisma.industry.findUnique({
             where: { name: data.name }
         });
@@ -35,14 +44,15 @@ export async function createIndustry(data: { name: string; remarks?: string }) {
 
         revalidatePath("/config/industry");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating industry:", error);
-        return { success: false, error: "Failed to create industry." };
+        return { success: false, error: error.message || "Failed to create industry." };
     }
 }
 
 export async function updateIndustry(id: string, data: { name: string; remarks?: string, status?: boolean }) {
     try {
+        await requireAdmin();
         await prisma.industry.update({
             where: { id },
             data: {
@@ -54,28 +64,30 @@ export async function updateIndustry(id: string, data: { name: string; remarks?:
 
         revalidatePath("/config/industry");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error updating industry:", error);
-        return { success: false, error: "Failed to update industry." };
+        return { success: false, error: error.message || "Failed to update industry." };
     }
 }
 
 export async function deleteIndustry(id: string) {
     try {
+        await requireAdmin();
         await prisma.industry.delete({
             where: { id }
         });
 
         revalidatePath("/config/industry");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting industry:", error);
-        return { success: false, error: "Failed to delete industry." };
+        return { success: false, error: error.message || "Failed to delete industry." };
     }
 }
 
 export async function toggleIndustryStatus(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin();
         await prisma.industry.update({
             where: { id },
             data: { status: !currentStatus }
@@ -83,8 +95,8 @@ export async function toggleIndustryStatus(id: string, currentStatus: boolean) {
 
         revalidatePath("/config/industry");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error toggling status:", error);
-        return { success: false, error: "Failed to update status." };
+        return { success: false, error: error.message || "Failed to update status." };
     }
 }

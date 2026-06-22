@@ -2,10 +2,19 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 // Admin Actions
 export async function getOfferCodes() {
     try {
+        await requireAdmin();
         const offers = await prisma.offerCode.findMany({
             orderBy: { createdAt: 'desc' },
             include: {
@@ -35,6 +44,7 @@ export async function createOfferCode(data: {
     applicablePlans: string[];
 }) {
     try {
+        await requireAdmin();
         await prisma.offerCode.create({
             data: {
                 code: data.code.toUpperCase().trim(),
@@ -65,6 +75,7 @@ export async function updateOfferCode(id: string, data: {
     applicablePlans: string[];
 }) {
     try {
+        await requireAdmin();
         await prisma.offerCode.update({
             where: { id },
             data: {
@@ -88,6 +99,7 @@ export async function updateOfferCode(id: string, data: {
 
 export async function deleteOfferCode(id: string) {
     try {
+        await requireAdmin();
         await prisma.offerCode.delete({
             where: { id }
         });
@@ -102,6 +114,7 @@ export async function deleteOfferCode(id: string) {
 
 export async function toggleOfferStatus(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin();
         await prisma.offerCode.update({
             where: { id },
             data: { isActive: !currentStatus }
@@ -117,6 +130,7 @@ export async function toggleOfferStatus(id: string, currentStatus: boolean) {
 
 export async function getOfferClaims(offerId: string) {
     try {
+        await requireAdmin();
         const claims = await prisma.offerClaim.findMany({
             where: { offerId },
             orderBy: { claimedOn: 'desc' }
@@ -131,6 +145,9 @@ export async function getOfferClaims(offerId: string) {
 // Client Actions (Checkout)
 export async function validateOfferCode(code: string, userEmail: string, planName: string, originalAmount: number) {
     try {
+        const session = await auth();
+        if (!session?.user) throw new Error("Unauthorized");
+
         const cleanCode = code.toUpperCase().trim();
         
         const offer = await prisma.offerCode.findUnique({

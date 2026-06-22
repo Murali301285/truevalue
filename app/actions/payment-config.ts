@@ -2,9 +2,18 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 export async function getPaymentConfigs() {
     try {
+        await requireAdmin();
         const configs = await prisma.paymentConfig.findMany({
             orderBy: { createdAt: 'desc' }
         });
@@ -24,6 +33,7 @@ export async function upsertPaymentConfig(data: {
     documents?: string[];
 }) {
     try {
+        await requireAdmin();
         if (data.id) {
             await prisma.paymentConfig.update({
                 where: { id: data.id },
@@ -59,28 +69,30 @@ export async function upsertPaymentConfig(data: {
 
         revalidatePath("/config/payment");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error saving payment config:", error);
-        return { success: false, error: "Failed to save configuration." };
+        return { success: false, error: error.message || "Failed to save configuration." };
     }
 }
 
 export async function deletePaymentConfig(id: string) {
     try {
+        await requireAdmin();
         await prisma.paymentConfig.delete({
             where: { id }
         });
 
         revalidatePath("/config/payment");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting payment config:", error);
-        return { success: false, error: "Failed to delete configuration." };
+        return { success: false, error: error.message || "Failed to delete configuration." };
     }
 }
 
 export async function togglePaymentConfigStatus(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin();
         await prisma.paymentConfig.update({
             where: { id },
             data: { isActive: !currentStatus }
@@ -88,8 +100,8 @@ export async function togglePaymentConfigStatus(id: string, currentStatus: boole
 
         revalidatePath("/config/payment");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error toggling status:", error);
-        return { success: false, error: "Failed to update status." };
+        return { success: false, error: error.message || "Failed to update status." };
     }
 }

@@ -3,6 +3,19 @@
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { auth } from "@/auth";
+
+async function checkCompanyOwnership(companyId: string) {
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+    const isAdmin = (session.user as any).role === 'ADMIN';
+    if (!isAdmin) {
+        const company = await prisma.company.findUnique({ where: { id: companyId } });
+        if (!company || company.parentId !== session.user.id) {
+            throw new Error("Unauthorized: You do not own this company");
+        }
+    }
+}
 
 const TransactionSchema = z.object({
     companyId: z.string(),
@@ -29,6 +42,7 @@ export async function logTransaction(prevState: any, formData: FormData) {
 
     try {
         const data = TransactionSchema.parse(rawData);
+        await checkCompanyOwnership(data.companyId);
 
         // Create Transaction
         await prisma.cashTransaction.create({
@@ -67,6 +81,7 @@ export async function logTransaction(prevState: any, formData: FormData) {
 }
 
 export async function getTransactions(companyId: string) {
+    await checkCompanyOwnership(companyId);
     return await prisma.cashTransaction.findMany({
         where: { companyId },
         orderBy: { date: 'desc' },
@@ -79,8 +94,15 @@ export async function bulkImportTransactions(data: any[]) {
         const validTransactions = [];
         const errors = [];
 
-        // 1. Fetch all companies to map Name -> ID if needed
-        const companies = await prisma.company.findMany({ select: { id: true, name: true, code: true } });
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
+        // 1. Fetch only owned companies
+        const companies = await prisma.company.findMany({ 
+            where: isAdmin ? {} : { parentId: session.user.id },
+            select: { id: true, name: true, code: true } 
+        });
 
         for (const item of data) {
             // Flexible matching for Company

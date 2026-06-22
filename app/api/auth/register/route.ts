@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, mobileNumber } = body;
+        const { name, email, password, mobileNumber, termsAccepted, dpdpAccepted } = body;
 
         // Basic validation
         if (!email || !password || !mobileNumber) {
@@ -57,6 +57,9 @@ export async function POST(req: Request) {
                 mobileNumber,
                 password: hashedPassword,
                 role: "USER",
+                termsAccepted: termsAccepted || false,
+                dpdpAccepted: dpdpAccepted || false,
+                dpdpAcceptedAt: dpdpAccepted ? new Date() : null,
             },
         });
 

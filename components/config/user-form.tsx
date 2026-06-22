@@ -94,22 +94,22 @@ export function UserForm({ open, onOpenChange, initialData, onSuccess }: UserFor
                     <DialogTitle>{initialData ? 'Edit User' : 'Add New User'}</DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4" autoComplete="off">
                     <div className="space-y-2">
                         <Label>Full Name *</Label>
-                        <Input {...form.register("name")} placeholder="John Doe" />
+                        <Input {...form.register("name")} placeholder="Your Name" autoComplete="off" />
                         {form.formState.errors.name && <p className="text-red-500 text-xs">{form.formState.errors.name.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <Label>Email (Login ID) *</Label>
-                        <Input type="email" {...form.register("email")} placeholder="john@company.com" disabled={!!initialData} />
+                        <Input type="email" {...form.register("email")} placeholder="Your Email" disabled={!!initialData} autoComplete="off" />
                         {form.formState.errors.email && <p className="text-red-500 text-xs">{form.formState.errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-2">
                         <Label>{initialData ? "Password (Leave blank to keep same)" : "Password *"}</Label>
-                        <Input type="password" {...form.register("password")} placeholder="******" />
+                        <Input type="password" {...form.register("password")} placeholder="******" autoComplete="new-password" />
                         {form.formState.errors.password && <p className="text-red-500 text-xs">{form.formState.errors.password.message}</p>}
                     </div>
 

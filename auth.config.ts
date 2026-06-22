@@ -14,52 +14,31 @@ export const authConfig = {
             const isLoggedIn = !!auth?.user;
             const userRole = (auth?.user as any)?.role;
 
-            const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
-            const isOnLogin = nextUrl.pathname.startsWith('/login');
+            const publicRoutes = ['/login', '/signup', '/terms', '/forgot-password', '/reset-password'];
+            const isPublicRoute = publicRoutes.some(route => nextUrl.pathname.startsWith(route)) || nextUrl.pathname === '/';
 
-            // Protected Routes (everything except login, static, public)
-            // Assuming the app is mostly protected.
+            const isRestrictedAdminPage = nextUrl.pathname.startsWith('/config') || nextUrl.pathname.startsWith('/payments');
 
-            if (isOnDashboard) {
-                if (isLoggedIn) {
-                    // RBAC Check
-                    // If USER role, they can ONLY access /dashboard (and sub-routes? Prompt says "User -> only dashboard")
-                    // Assuming /dashboard is the main page for them.
-                    // If they try to access other restricted pages (e.g. /config, /admin), redirect or block.
-                    // The prompt says "2. Admin -> all the pages".
-
-                    // Let's assume standard users can access /dashboard/* but NOT /config, /settings etc if those exist and are admin-only.
-                    // For now, implicitely allow dashboard access for both.
-                    // But if there are other pages like /admin or /settings that are not under /dashboard?
-                    // The prompt implies a restriction. "User -> only dashboard".
-
-                    // If User tries to go to a non-dashboard protected route (if any exist), redirect to dashboard.
-                    return true;
-                }
-                return false; // Redirect unauthenticated users to login page
-            } else if (isLoggedIn) {
-                // Logged in user navigating outside dashboard (e.g. root /, or /admin if it existed)
-                // If page is public, fine. If page is protected and not dashboard?
-
-                // If standard USER tries to access restricted areas (assuming /config or others are restricted)
-                const isRestrictedPage = nextUrl.pathname.startsWith('/config') || nextUrl.pathname.startsWith('/admin');
-
-                const baseUrl = process.env.AUTH_URL || nextUrl;
-
-                if (isRestrictedPage && userRole !== 'ADMIN') {
-                    return Response.redirect(new URL('/dashboard', baseUrl));
-                }
-
-                if (isOnLogin) {
-                    return Response.redirect(new URL('/dashboard', baseUrl));
-                }
-
-                return true;
-            } else if (isOnLogin) {
-                return true; // Allow access to login page
+            // 1. If it's a public route and user is logged in, redirect away from login/signup
+            if (isLoggedIn && (nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/signup'))) {
+                return Response.redirect(new URL('/dashboard', nextUrl));
             }
 
-            // Default allow for other pages (like landing page /)
+            // 2. If it's a public route, allow access
+            if (isPublicRoute) {
+                return true;
+            }
+
+            // 3. For ALL OTHER ROUTES (Protected), require login
+            if (!isLoggedIn) {
+                return false; // Redirects to signIn page automatically
+            }
+
+            // 4. Role-Based Access Control for restricted admin pages
+            if (isRestrictedAdminPage && userRole !== 'ADMIN') {
+                return Response.redirect(new URL('/dashboard', nextUrl));
+            }
+
             return true;
         },
         async jwt({ token, user, trigger, session }) {
@@ -67,10 +46,20 @@ export const authConfig = {
                 token.id = user.id;
                 token.role = (user as any).role;
                 token.name = user.name;
+                token.image = user.image;
             }
-            if (trigger === "update" && session?.user) {
-                token.name = session.user.name;
-                token.role = session.user.role;
+            if (trigger === "update" && session) {
+                // NextAuth update(data) passes data directly as the session parameter
+                if (session.name !== undefined) token.name = session.name;
+                if (session.image !== undefined) token.image = session.image;
+                if (session.role !== undefined) token.role = session.role;
+                
+                // Fallback just in case it is ever passed wrapped
+                if (session.user) {
+                    if (session.user.name !== undefined) token.name = session.user.name;
+                    if (session.user.image !== undefined) token.image = session.user.image;
+                    if (session.user.role !== undefined) token.role = session.user.role;
+                }
             }
             return token;
         },
@@ -79,6 +68,7 @@ export const authConfig = {
                 session.user.id = token.id as string;
                 session.user.role = token.role as any;
                 session.user.name = token.name;
+                session.user.image = token.image as string | null | undefined;
             }
             return session;
         }
@@ -114,7 +104,15 @@ export const authConfig = {
                     const passwordsMatch = await bcrypt.compare(password, user.password || "");
                     console.log("[DEBUG] Password match result:", passwordsMatch);
 
-                    if (passwordsMatch) return user;
+                    if (passwordsMatch) {
+                        return {
+                            id: user.id,
+                            name: user.name,
+                            email: user.email,
+                            role: user.role,
+                            image: user.image,
+                        };
+                    }
                 } else {
                     console.log("[DEBUG] Credential parsing failed:", parsedCredentials.error);
                 }

@@ -2,9 +2,19 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
 
 export async function getCustomers() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+    const isAdmin = (session.user as any).role === 'ADMIN';
+
     return await prisma.customer.findMany({
+        where: isAdmin ? {} : {
+            companies: {
+                some: { parentId: session.user.id }
+            }
+        },
         orderBy: { createdAt: 'desc' },
         include: {
             contacts: true,
@@ -17,6 +27,22 @@ export async function getCustomers() {
 
 export async function createCustomer(data: any) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
+        if (!isAdmin && data.companyIds && data.companyIds.length > 0) {
+            const count = await prisma.company.count({
+                where: { 
+                    id: { in: data.companyIds },
+                    parentId: session.user.id
+                }
+            });
+            if (count !== data.companyIds.length) {
+                throw new Error("Unauthorized to link to one or more selected companies");
+            }
+        }
+
         await prisma.customer.create({
             data: {
                 name: data.name,
@@ -45,23 +71,39 @@ export async function createCustomer(data: any) {
 
 export async function updateCustomer(id: string, data: any) {
     try {
-        // Transaction to handle complex updates
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
+        if (!isAdmin) {
+            const existing = await prisma.customer.findFirst({
+                where: { 
+                    id,
+                    companies: { some: { parentId: session.user.id } }
+                }
+            });
+            if (!existing) throw new Error("Unauthorized");
+            
+            if (data.companyIds && data.companyIds.length > 0) {
+                const count = await prisma.company.count({
+                    where: { 
+                        id: { in: data.companyIds },
+                        parentId: session.user.id
+                    }
+                });
+                if (count !== data.companyIds.length) {
+                    throw new Error("Unauthorized to link to one or more selected companies");
+                }
+            }
+        }
+
         await prisma.$transaction(async (tx) => {
-            // 1. Update basic info
             await tx.customer.update({
                 where: { id },
                 data: {
                     name: data.name,
                     address: data.address,
                     area: data.area,
-                }
-            });
-
-            // 2. Update Companies (Set logic: replace all relations)
-            // Implicit many-to-many update is easiest by set
-            await tx.customer.update({
-                where: { id },
-                data: {
                     companies: {
                         set: [], // Clear all
                         connect: data.companyIds?.map((cid: string) => ({ id: cid })) || []
@@ -69,9 +111,6 @@ export async function updateCustomer(id: string, data: any) {
                 }
             });
 
-            // 3. Update Contacts
-            // Strategy: Delete all existing and re-create (simplest for prototyping)
-            // A more optimized approach would be diffing, but for < 5 contacts, this is fine.
             await tx.customerContact.deleteMany({
                 where: { customerId: id }
             });
@@ -99,6 +138,20 @@ export async function updateCustomer(id: string, data: any) {
 
 export async function deleteCustomer(id: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+        const isAdmin = (session.user as any).role === 'ADMIN';
+
+        if (!isAdmin) {
+            const existing = await prisma.customer.findFirst({
+                where: { 
+                    id,
+                    companies: { some: { parentId: session.user.id } }
+                }
+            });
+            if (!existing) throw new Error("Unauthorized");
+        }
+
         await prisma.customer.delete({ where: { id } });
         revalidatePath('/config/customer');
         return { success: true };

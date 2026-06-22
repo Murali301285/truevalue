@@ -2,27 +2,20 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
-import { Role } from "@prisma/client";
-
-// TODO: Replace with actual session fetching when Auth is fully wired
-const DEMO_USER_ID = "demo-parent-id";
+import { auth } from "@/auth";
 
 export async function getIndexConfig() {
-    // Ensure we have a demo user for this phase if not exists
-    let user = await prisma.user.findUnique({ where: { email: "demo@realsme.com" } });
-    if (!user) {
-        user = await prisma.user.create({
-            data: {
-                email: "demo@realsme.com",
-                name: "Demo Parent",
-                role: Role.USER,
-                id: DEMO_USER_ID
-            }
-        });
+    const session = await auth();
+    if (!session?.user?.id) {
+        return {
+            weightRunway: 50,
+            weightSentiment: 20,
+            weightPipeline: 30,
+        };
     }
 
     const config = await prisma.indexConfig.findUnique({
-        where: { userId: user.id },
+        where: { userId: session.user.id },
     });
 
     if (!config) {
@@ -46,8 +39,8 @@ export async function updateIndexConfig(data: {
     sentiment: number;
     pipeline: number;
 }) {
-    const user = await prisma.user.findUnique({ where: { email: "demo@realsme.com" } });
-    if (!user) throw new Error("User not found");
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
 
     // Validate sum (optional, but good UX)
     if (data.runway + data.sentiment + data.pipeline !== 100) {
@@ -55,14 +48,14 @@ export async function updateIndexConfig(data: {
     }
 
     await prisma.indexConfig.upsert({
-        where: { userId: user.id },
+        where: { userId: session.user.id },
         update: {
             weightRunway: data.runway,
             weightSentiment: data.sentiment,
             weightPipeline: data.pipeline,
         },
         create: {
-            userId: user.id,
+            userId: session.user.id,
             weightRunway: data.runway,
             weightSentiment: data.sentiment,
             weightPipeline: data.pipeline,

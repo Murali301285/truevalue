@@ -2,9 +2,18 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 export async function getAiModels() {
     try {
+        await requireAdmin();
         const models = await prisma.aiModelConfig.findMany({
             orderBy: { createdAt: 'desc' }
         });
@@ -24,6 +33,7 @@ export async function upsertAiModel(data: {
     remarks?: string;
 }) {
     try {
+        await requireAdmin();
         if (data.id) {
             await prisma.aiModelConfig.update({
                 where: { id: data.id },
@@ -58,28 +68,30 @@ export async function upsertAiModel(data: {
 
         revalidatePath("/config/ai-model");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error saving AI model:", error);
-        return { success: false, error: "Failed to save AI model." };
+        return { success: false, error: error.message || "Failed to save AI model." };
     }
 }
 
 export async function deleteAiModel(id: string) {
     try {
+        await requireAdmin();
         await prisma.aiModelConfig.delete({
             where: { id }
         });
 
         revalidatePath("/config/ai-model");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error deleting AI model:", error);
-        return { success: false, error: "Failed to delete AI model." };
+        return { success: false, error: error.message || "Failed to delete AI model." };
     }
 }
 
 export async function toggleAiModelStatus(id: string, currentStatus: boolean) {
     try {
+        await requireAdmin();
         await prisma.aiModelConfig.update({
             where: { id },
             data: { isActive: !currentStatus }
@@ -87,8 +99,8 @@ export async function toggleAiModelStatus(id: string, currentStatus: boolean) {
 
         revalidatePath("/config/ai-model");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error toggling status:", error);
-        return { success: false, error: "Failed to update status." };
+        return { success: false, error: error.message || "Failed to update status." };
     }
 }

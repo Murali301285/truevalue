@@ -19,7 +19,6 @@ export function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        // ... (rest of logic same) ...
         e.preventDefault();
         setIsLoading(true);
 
@@ -62,7 +61,7 @@ export function LoginForm() {
 
     return (
         <div className="space-y-6">
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-4" onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(e as any) }}>
                 <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-700 font-semibold">Email Address</Label>
                     <div className="relative">
@@ -111,17 +110,16 @@ export function LoginForm() {
 
                 <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="remember" className="h-4 w-4 rounded border-gray-300 text-brand-red focus:ring-brand-red" />
-                        <label htmlFor="remember" className="text-gray-500 font-medium">Remember me</label>
+                        {/* Remember me removed as per user request */}
                     </div>
-                    <a href="#" className="font-semibold text-brand-red hover:text-red-700 hover:underline">Forgot password?</a>
+                    <a href="/forgot-password" className="font-semibold text-brand-red hover:text-red-700 hover:underline">Forgot password?</a>
                 </div>
 
-                <Button type="submit" className="w-full h-11 text-base font-bold bg-[#a81b21] hover:bg-[#8e161c] shadow-lg shadow-red-100" disabled={isLoading}>
+                <Button type="button" onClick={handleSubmit} className="w-full h-11 text-base font-bold bg-[#a81b21] hover:bg-[#8e161c] shadow-lg shadow-red-100" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign In
                 </Button>
-            </form>
+            </div>
 
         </div>
     );

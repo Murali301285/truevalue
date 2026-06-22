@@ -100,6 +100,15 @@ export async function getValuation(id: string) {
             where: { id }
         });
         if (!valuation) return null;
+
+        if (valuation.userEmail) {
+            const session = await auth();
+            const isAdmin = session?.user && (session.user as any).role === 'ADMIN';
+            if (!isAdmin && session?.user?.email !== valuation.userEmail) {
+                return null;
+            }
+        }
+
         return {
             ...valuation,
             revenue: Number(valuation.revenue),

@@ -48,3 +48,6 @@ package_0603.zip
 *.zip
 *.rar
 build*.log
+
+# Uploaded files
+public/uploads/

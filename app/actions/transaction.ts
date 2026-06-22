@@ -2,9 +2,18 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 export async function getGlobalTransactions() {
     try {
+        await requireAdmin();
         const transactions = await prisma.cashTransaction.findMany({
             include: {
                 company: {
@@ -30,6 +39,7 @@ export async function getGlobalTransactions() {
 
 export async function deleteTransaction(id: string) {
     try {
+        await requireAdmin();
         await prisma.cashTransaction.delete({
             where: { id }
         });

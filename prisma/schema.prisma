@@ -61,6 +61,12 @@ model User {
   termsAccepted Boolean   @default(false)
   dpdpAccepted  Boolean   @default(false)
   dpdpAcceptedAt DateTime?
+
+  // Password Reset
+  resetToken       String?   @unique
+  resetTokenExpiry DateTime?
+  resetTokenCount  Int       @default(0)
+  resetTokenDate   DateTime?
 }
 
 // Configuration for RealSME Index (Dynamic Weights)

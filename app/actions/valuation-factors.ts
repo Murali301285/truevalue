@@ -2,6 +2,14 @@
 
 import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+
+async function requireAdmin() {
+    const session = await auth();
+    if (!session?.user || (session.user as any).role !== 'ADMIN') {
+        throw new Error("Unauthorized: Admin access required.");
+    }
+}
 
 // Type definition based on our Prisma schema
 export type PlanValuationFactorInput = {
@@ -70,6 +78,7 @@ export async function getPlanValuationFactor(planName: string) {
 // Upsert the configuration for a specific plan
 export async function savePlanValuationFactor(data: PlanValuationFactorInput) {
     try {
+        await requireAdmin();
         const { planName, ...factors } = data;
 
         await prisma.planValuationFactor.upsert({
@@ -83,8 +92,8 @@ export async function savePlanValuationFactor(data: PlanValuationFactorInput) {
 
         revalidatePath("/config/valuation-factors");
         return { success: true };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to save plan valuation factor", error);
-        return { success: false, error: "Failed to save configuration" };
+        return { success: false, error: error.message || "Failed to save configuration" };
     }
 }
