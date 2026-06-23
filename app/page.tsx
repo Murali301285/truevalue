@@ -41,12 +41,12 @@ export default function LandingPage() {
                         {
                             icon: <Zap className="w-6 h-6 text-brand-red" />,
                             title: "Instant Algorithm",
-                            desc: "Proprietary calculation logic trained on 20+ MSME sectors for high accuracy and speed."
+                            desc: "Proprietary MSME valuation framework designed to provide consistent business valuations."
                         },
                         {
                             icon: <Shield className="w-6 h-6 text-brand-red" />,
-                            title: "Bank-Ready Reports",
-                            desc: "Professional PDF reports formatted for credit submissions and internal reviews."
+                            title: "Professionally formatted",
+                            desc: "Reports that suitable for discussions with lenders, investors and advisors."
                         },
                         {
                             icon: <Lock className="w-6 h-6 text-brand-red" />,
@@ -91,12 +91,13 @@ export default function LandingPage() {
                     {/* Express Plan */}
                     <div className="relative bg-white border-2 border-brand-red rounded-3xl p-8 shadow-2xl shadow-red-50 transform hover:-translate-y-2 transition-transform duration-300">
                         <div className="mb-6">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-xl font-bold text-[#a81b21]">Express</h3>
                                 <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
                                     <Zap className="w-5 h-5 text-[#a81b21] fill-[#a81b21]/20" />
                                 </motion.div>
                             </div>
+                            <p className="text-sm text-gray-500 font-medium mb-2">Indicative Valuation</p>
                             <div className="flex items-baseline gap-1 mb-3">
                                 <span className="text-5xl font-extrabold text-[#a81b21]">₹499</span>
                                 <span className="text-gray-500">/report</span>
@@ -105,11 +106,11 @@ export default function LandingPage() {
                                 <Clock className="w-3.5 h-3.5" /> Turnaround: ~2 Minutes
                             </div>
                         </div>
-                        <ul className="space-y-4 mb-8">
+                        <ul className="space-y-4 mb-6">
                             {[
-                                "Instant Calculation",
-                                "4-Page PDF Report",
-                                "Indicative Use Only"
+                                "Quick estimate",
+                                "Financial snapshot",
+                                "Understand current valuation"
                             ].map((item) => (
                                 <li key={item} className="flex items-center gap-3 text-gray-600">
                                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -119,6 +120,9 @@ export default function LandingPage() {
                                 </li>
                             ))}
                         </ul>
+                        <div className="text-xs text-gray-400 mb-8 italic">
+                            EBITA/Profit Multiplier Method used
+                        </div>
                         <Link href="/login">
                             <Button className="w-full h-12 bg-[#a81b21] hover:bg-[#8e161c] text-white font-bold rounded-xl shadow-lg shadow-red-100">
                                 Get Started
@@ -132,12 +136,13 @@ export default function LandingPage() {
                             <span className="bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide shadow-sm">Coming Soon</span>
                         </div>
                         <div className="mb-6">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-xl font-bold text-[#a81b21]">Standard</h3>
                                 <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2, delay: 0.3, ease: "easeInOut" }}>
                                     <BarChart className="w-5 h-5 text-[#a81b21] fill-[#a81b21]/20" />
                                 </motion.div>
                             </div>
+                            <p className="text-sm text-gray-500 font-medium mb-2">Business Review</p>
                             <div className="flex items-baseline gap-1 mb-3">
                                 <span className="text-5xl font-extrabold text-[#a81b21]">₹4,999</span>
                                 <span className="text-gray-500">/report</span>
@@ -146,12 +151,13 @@ export default function LandingPage() {
                                 <Clock className="w-3.5 h-3.5" /> Turnaround: ~10 Minutes
                             </div>
                         </div>
-                        <ul className="space-y-4 mb-8">
+                        <ul className="space-y-4 mb-6">
                             {[
-                                "Document, OCR Extraction",
-                                "Analyst Verification",
-                                "10-Page Detailed Report",
-                                "Loan Submission Ready"
+                                "Valuation",
+                                "Dependency Assessment",
+                                "Financial Analysis",
+                                "Risk Review",
+                                "Continuity Score"
                             ].map((item) => (
                                 <li key={item} className="flex items-center gap-3 text-gray-600">
                                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -161,6 +167,9 @@ export default function LandingPage() {
                                 </li>
                             ))}
                         </ul>
+                        <div className="text-xs text-gray-400 mb-8 italic">
+                            Discounted Cash Flow (DCF) Method used
+                        </div>
                         <NotifyMeModal
                             tier="Standard"
                             trigger={
@@ -177,12 +186,13 @@ export default function LandingPage() {
                             <span className="bg-yellow-50 text-yellow-700 text-xs font-bold px-3 py-1 rounded-full border border-yellow-200 uppercase tracking-wide shadow-sm">Coming Soon</span>
                         </div>
                         <div className="mb-6">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-1">
                                 <h3 className="text-xl font-bold text-[#a81b21]">Certified</h3>
                                 <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 2, delay: 0.6, ease: "easeInOut" }}>
                                     <Shield className="w-5 h-5 text-[#a81b21] fill-[#a81b21]/20" />
                                 </motion.div>
                             </div>
+                            <p className="text-sm text-gray-500 font-medium mb-2">Professional Opinion</p>
                             <div className="flex items-baseline gap-1 mb-3">
                                 <span className="text-5xl font-extrabold text-[#a81b21]">₹14,999</span>
                                 <span className="text-gray-500">/report</span>
@@ -191,12 +201,13 @@ export default function LandingPage() {
                                 <Clock className="w-3.5 h-3.5" /> Turnaround: ~48 Hours
                             </div>
                         </div>
-                        <ul className="space-y-4 mb-8">
+                        <ul className="space-y-4 mb-6">
                             {[
-                                "CA/RV Certified",
-                                "Regulatory Compliance",
-                                "Stamp Duty Ready",
-                                "Manual Scrutiny"
+                                "Valuation",
+                                "Manual Review",
+                                "CA / RV Certification",
+                                "Governance Review",
+                                "Business Continuity Assessment"
                             ].map((item) => (
                                 <li key={item} className="flex items-center gap-3 text-gray-600">
                                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -206,6 +217,9 @@ export default function LandingPage() {
                                 </li>
                             ))}
                         </ul>
+                        <div className="text-xs text-gray-400 mb-8 italic">
+                            Certified Multiple analytical models used.
+                        </div>
                         <NotifyMeModal
                             tier="Certified"
                             trigger={
@@ -286,12 +300,12 @@ export default function LandingPage() {
                         {
                             icon: <Zap className="w-6 h-6 text-brand-red" />,
                             title: "Instant Algorithm",
-                            desc: "Proprietary calculation logic trained on 20+ MSME sectors for high accuracy and speed."
+                            desc: "Proprietary MSME valuation framework designed to provide consistent business valuations."
                         },
                         {
                             icon: <Shield className="w-6 h-6 text-brand-red" />,
-                            title: "Bank-Ready Reports",
-                            desc: "Professional PDF reports formatted for credit submissions and internal reviews."
+                            title: "Professionally formatted",
+                            desc: "Reports that suitable for discussions with lenders, investors and advisors."
                         },
                         {
                             icon: <Lock className="w-6 h-6 text-brand-red" />,
@@ -341,7 +355,7 @@ export default function LandingPage() {
                             <span className="text-lg font-bold text-brand-red tracking-tight">MyValue</span>
                         </div>
                         <p className="text-sm text-gray-500 leading-relaxed mb-4">
-                            Building trust in Indian MSMEs through real-time, professional valuation services.
+                            Helping MSME owners understand, strengthen and value their businesses.
                         </p>
                         <p className="text-xs text-brand-red">© myvalue.realsme.in 2026</p>
                     </div>

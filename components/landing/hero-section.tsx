@@ -42,17 +42,7 @@ export function HeroSection() {
                         transition={{ duration: 0.5, type: "spring" }}
                         className="inline-block mr-3"
                     >
-                        Professional
-                    </motion.span>
-                    <motion.span
-                        variants={{
-                            hidden: { opacity: 0, scale: 0.5 },
-                            visible: { opacity: 1, scale: 1 }
-                        }}
-                        transition={{ duration: 0.5, type: "spring" }}
-                        className="inline-block"
-                    >
-                        MSME
+                        Your starting point
                     </motion.span>
                 </span>
 
@@ -66,7 +56,7 @@ export function HeroSection() {
                         transition={{ duration: 0.5, type: "spring" }}
                         className="inline-block mr-3"
                     >
-                        Valuations,
+                        for
                     </motion.span>
                     <span className="relative inline-block">
                         <motion.span
@@ -77,7 +67,7 @@ export function HeroSection() {
                             transition={{ duration: 0.5, type: "spring" }}
                             className="relative z-10 inline-block"
                         >
-                            Instantly.
+                            Business Valuation
                         </motion.span>
                         <motion.span
                             initial={{ width: "0%" }}

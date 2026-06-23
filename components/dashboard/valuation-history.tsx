@@ -11,19 +11,22 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle, Building2, MapPin, Receipt, Sparkles, TrendingUp, Calendar, Users, RefreshCw, AlertCircle, ArrowUpRight, DollarSign, Info } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Download, FileText, Clock, CheckCircle2, ChevronRight, ChevronDown, Eye, Search, ChevronsLeft, ChevronLeft, ChevronRight as ChevronRightIcon, ChevronsRight, PlusCircle, Building2, MapPin, Receipt, Sparkles, TrendingUp, Calendar, Users, RefreshCw, AlertCircle, ArrowUpRight, DollarSign, Info, Calculator } from "lucide-react"
 import React, { useState, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
 
-// Helper for consistent date formatting
 const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
         day: '2-digit',
         month: '2-digit',
-        year: 'numeric'
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
     });
 };
 
@@ -41,9 +44,9 @@ const mapValuationToRow = (val: any) => {
         industry: val.industry,
         userName: val.userEmail || "Client",
         phone: val.phone || "N/A",
-        tier: val.purpose === "Express" ? "Instant" : "Certified",
+        tier: (val.purpose === "Preliminary Estimate" || val.purpose === "Express") ? "Express" : "Certified",
         status: val.status || "Completed",
-        amount: val.purpose === "Express" ? 499 : 14999,
+        amount: (val.purpose === "Preliminary Estimate" || val.purpose === "Express") ? 499 : 14999,
         revenue: Number(val.revenue || 0),
         profit: Number(val.ebitda || 0),
         pat: Number(val.pat || 0),
@@ -359,27 +362,38 @@ export function ValuationHistory({ valuations }: { valuations?: any[] }) {
     )
 }
 
-export function UserValuationHistory({ valuations }: { valuations?: any[] }) {
+export function UserValuationHistory({ valuations, isDashboard = false }: { valuations?: any[], isDashboard?: boolean }) {
     const [searchTerm, setSearchTerm] = useState("");
-    const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(10);
     const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(isDashboard ? 'all' : 10);
+
+    const sourceData = useMemo(() => {
+        if (!valuations) return [];
+        return valuations.map(mapValuationToRow);
+    }, [valuations]);
 
     const filteredData = useMemo(() => {
-        let result = valuations && valuations.length > 0 
-            ? valuations.map(mapValuationToRow)
-            : [];
+        let data = sourceData;
         if (searchTerm) {
-            const lowerQuery = searchTerm.toLowerCase();
-            result = result.filter(item => 
-                item.industry.toLowerCase().includes(lowerQuery) || 
-                item.companyName.toLowerCase().includes(lowerQuery)
+            const lowerSearch = searchTerm.toLowerCase();
+            data = data.filter(item =>
+                item.companyName.toLowerCase().includes(lowerSearch) ||
+                item.id.toLowerCase().includes(lowerSearch)
             );
         }
-        return result.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [searchTerm, valuations]);
+        if (isDashboard) {
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            return data.filter(item => {
+                const itemDate = new Date(item.date);
+                return itemDate.getMonth() === currentMonth && itemDate.getFullYear() === currentYear;
+            }).slice(0, 5);
+        }
+        return data;
+    }, [sourceData, searchTerm, isDashboard]);
 
     const totalPages = itemsPerPage === 'all' ? 1 : Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
-    if (currentPage > totalPages) setCurrentPage(totalPages);
+    if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
 
     const paginatedData = useMemo(() => {
         if (itemsPerPage === 'all') return filteredData;
@@ -387,7 +401,7 @@ export function UserValuationHistory({ valuations }: { valuations?: any[] }) {
         return filteredData.slice(start, start + itemsPerPage);
     }, [filteredData, currentPage, itemsPerPage]);
 
-    if (valuations && valuations.length === 0 && !searchTerm) {
+    if (isDashboard && valuations && valuations.length === 0 && !searchTerm) {
         return (
             <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -424,31 +438,40 @@ export function UserValuationHistory({ valuations }: { valuations?: any[] }) {
     return (
         <div className="bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-4 sm:p-6 border-b border-zinc-100 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <h2 className="text-lg font-semibold text-zinc-900 w-full sm:w-auto">My Valuations</h2>
-                <div className="flex w-full sm:w-auto items-center gap-2">
-                    <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                        <Input
-                            placeholder="Search Company..."
-                            className="pl-9 pr-4"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <Select value={itemsPerPage.toString()} onValueChange={(val) => {
-                        setItemsPerPage(val === 'all' ? 'all' : parseInt(val));
-                        setCurrentPage(1);
-                    }}>
-                        <SelectTrigger className="w-[100px]">
-                            <SelectValue placeholder="Display" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="10">10 / pg</SelectItem>
-                            <SelectItem value="20">20 / pg</SelectItem>
-                            <SelectItem value="all">All</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <h2 className="text-lg font-semibold text-zinc-900">My Valuations</h2>
+                    {isDashboard && (
+                        <span className="text-xs font-medium bg-zinc-100 text-zinc-500 px-2 py-1 rounded-md">
+                            Showing last 5 reports generated in {new Date().toLocaleString('en-US', { month: 'short', year: 'numeric' })}
+                        </span>
+                    )}
                 </div>
+                {!isDashboard && (
+                    <div className="flex w-full sm:w-auto items-center gap-2">
+                        <div className="relative w-full sm:w-64">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                            <Input
+                                placeholder="Search Company..."
+                                className="pl-9 pr-4"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+                            setItemsPerPage(val === 'all' ? 'all' : parseInt(val));
+                            setCurrentPage(1);
+                        }}>
+                            <SelectTrigger className="w-[100px]">
+                                <SelectValue placeholder="Display" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10 / pg</SelectItem>
+                                <SelectItem value="20">20 / pg</SelectItem>
+                                <SelectItem value="all">All</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
             <div className="overflow-x-auto w-full">
                 <Table>
@@ -506,30 +529,39 @@ export function UserValuationHistory({ valuations }: { valuations?: any[] }) {
             </div>
             
             {/* Pagination Controls */}
-            <div className="border-t p-4 flex items-center justify-between text-sm text-zinc-500 bg-zinc-50 border-zinc-100">
-                <div>
-                    Showing {filteredData.length === 0 ? 0 : (itemsPerPage === 'all' ? 1 : (currentPage - 1) * itemsPerPage + 1)} to {itemsPerPage === 'all' ? filteredData.length : Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} records
-                </div>
-                {itemsPerPage !== 'all' && totalPages > 1 && (
-                    <div className="flex items-center gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
-                            <ChevronsLeft className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <div className="px-3 font-medium text-zinc-900 border border-zinc-200 h-8 rounded-md flex items-center bg-white shadow-sm">
-                            {currentPage} / {totalPages}
-                        </div>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
-                            <ChevronRightIcon className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
-                            <ChevronsRight className="h-4 w-4" />
-                        </Button>
+            {!isDashboard && (
+                <div className="border-t p-4 flex items-center justify-between text-sm text-zinc-500 bg-zinc-50 border-zinc-100">
+                    <div>
+                        Showing {filteredData.length === 0 ? 0 : (itemsPerPage === 'all' ? 1 : (currentPage - 1) * itemsPerPage + 1)} to {itemsPerPage === 'all' ? filteredData.length : Math.min(currentPage * itemsPerPage, filteredData.length)} of {filteredData.length} records
                     </div>
-                )}
-            </div>
+                    {itemsPerPage !== 'all' && (
+                        <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                                <ChevronsLeft className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <div className="px-3 font-medium text-zinc-900 border border-zinc-200 h-8 rounded-md flex items-center bg-white shadow-sm">
+                                {currentPage} / {totalPages}
+                            </div>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                                <ChevronRightIcon className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}>
+                                <ChevronsRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {/* Dashboard Footer Label */}
+            {isDashboard && valuations && valuations.length > filteredData.length && (
+                <div className="border-t p-4 flex items-center justify-center text-sm text-zinc-500 bg-zinc-50/50 border-zinc-100">
+                    <p>For older reports get from <Link href="/dashboard/reports" className="text-brand-red font-semibold hover:underline">Reports section</Link></p>
+                </div>
+            )}
         </div>
     )
 }
@@ -803,6 +835,68 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
                         </div>
                     </motion.div>
 
+                    {/* Calculation Metrics */}
+                    {valuation.status === 'Completed' && valuation.estimatedValue > 0 && (
+                        <motion.div variants={itemVariants} className="bg-white p-5 rounded-2xl border border-zinc-150 shadow-sm">
+                            <h4 className="font-bold text-xs text-zinc-400 uppercase tracking-widest mb-4 flex items-center gap-1.5">
+                                <Calculator className="w-3.5 h-3.5 text-[#a81b21]" /> Calculation Metrics
+                            </h4>
+                            
+                            <div className="space-y-3 text-xs mt-3">
+                                <div className="space-y-1.5 bg-zinc-50 border border-zinc-100 p-3 rounded-xl">
+                                    <h4 className="font-bold text-zinc-900 uppercase tracking-wider text-[10px]">Step 1 – Identify Metric</h4>
+                                    <div className="flex flex-col gap-1 text-zinc-600 mt-1">
+                                        <div className="flex justify-between"><span>Metric Type =</span> <strong>{valuation.profit > 0 ? "EBITDA" : "Revenue"}</strong></div>
+                                        <div className="flex justify-between"><span>Metric Value =</span> <strong>{valuation.profit > 0 ? formatCurrency(valuation.profit) : formatCurrency(valuation.revenue)}</strong></div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 bg-zinc-50 border border-zinc-100 p-3 rounded-xl">
+                                    <h4 className="font-bold text-zinc-900 uppercase tracking-wider text-[10px]">Step 2 – Base Multiple</h4>
+                                    <div className="flex flex-col gap-1 text-zinc-600 mt-1">
+                                        <div className="flex justify-between">
+                                            <span>Base Multiple =</span> 
+                                            <strong>{valuation.profit > 0 ? "4.00x" : "1.50x"}</strong>
+                                        </div>
+                                        <span className="text-[9px] text-zinc-400 italic">Derived from Industry: {valuation.industry}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 bg-zinc-50 border border-zinc-100 p-3 rounded-xl">
+                                    <h4 className="font-bold text-zinc-900 uppercase tracking-wider text-[10px]">Step 3 – Calculate Adjustment Factors</h4>
+                                    <ul className="list-disc pl-4 text-zinc-500 space-y-0.5 text-[10px] mt-1 mb-2">
+                                        <li>Growth Factor (GF)</li>
+                                        <li>Margin Factor (MF)</li>
+                                        <li>Risk Factor (RF)</li>
+                                        <li>Age Factor (AF)</li>
+                                    </ul>
+                                    <div className="flex justify-between items-center text-zinc-600 pt-1.5 border-t border-zinc-200/60">
+                                        <span>Composite Adjustment =</span>
+                                        <strong>{valuation.profit > 0 
+                                            ? ((valuation.estimatedValue / valuation.profit) / 4.0).toFixed(2)
+                                            : valuation.revenue > 0 
+                                                ? ((valuation.estimatedValue / valuation.revenue) / 1.5).toFixed(2)
+                                                : "0.00"
+                                        }</strong>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5 bg-brand-red/5 border border-brand-red/10 p-3 rounded-xl">
+                                    <h4 className="font-bold text-brand-red uppercase tracking-wider text-[10px]">Step 4 – Final Valuation</h4>
+                                    <div className="flex justify-between items-center text-zinc-800 font-mono text-[9px] mt-1">
+                                        <span>{valuation.profit > 0 ? formatCurrency(valuation.profit) : formatCurrency(valuation.revenue)} × {valuation.profit > 0 ? "4.00" : "1.50"} × {valuation.profit > 0 
+                                            ? ((valuation.estimatedValue / valuation.profit) / 4.0).toFixed(2)
+                                            : valuation.revenue > 0 
+                                                ? ((valuation.estimatedValue / valuation.revenue) / 1.5).toFixed(2)
+                                                : "0.00"
+                                        }</span>
+                                        <strong className="text-brand-red text-sm">{formatCurrency(valuation.estimatedValue)}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Valuation Result (Premium Glow Card) */}
                     {valuation.status === 'Completed' && valuation.estimatedValue > 0 && (
                         <motion.div 
@@ -865,8 +959,10 @@ function RequestDetailSheet({ valuation }: { valuation: any }) {
                     {/* Support & Footer Section */}
                     <motion.div variants={itemVariants} className="pt-6 border-t border-zinc-100 text-center">
                         <p className="text-xs text-zinc-500 font-semibold mb-1.5">Questions regarding this valuation request?</p>
-                        <Button variant="link" className="text-brand-red font-bold text-xs h-auto p-0 hover:text-[#8e161c]">
-                            Contact Support Desk <ArrowUpRight className="w-3 h-3 ml-0.5 inline" />
+                        <Button variant="link" className="text-brand-red font-bold text-xs h-auto p-0 hover:text-[#8e161c]" asChild>
+                            <a href="mailto:support@realsme.com">
+                                Contact Support Desk <ArrowUpRight className="w-3 h-3 ml-0.5 inline" />
+                            </a>
                         </Button>
                     </motion.div>
                 </motion.div>

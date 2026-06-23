@@ -205,7 +205,7 @@ export function SimplifiedWizardContainer({ industries = [] }: { industries?: an
     // GATEKEEPER: Render Plan Selection if none is selected yet
     if (!selectedPlan) {
         return (
-            <div className="min-h-screen py-10 px-4">
+            <div className="pb-10">
                 <Step0PlanSelection 
                     onSelectPlan={(plan) => setSelectedPlan(plan)} 
                     hasDraft={hasDraft} 

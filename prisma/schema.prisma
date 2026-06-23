@@ -458,3 +458,23 @@ model OfferClaim {
   // Link to payment order
   orderId         String?
 }
+
+// Feedback System
+model FeedbackField {
+  id          String   @id @default(cuid())
+  label       String
+  type        String   @default("SLIDER") // "SLIDER", "TEXT", "CHECKBOX"
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FeedbackSubmission {
+  id          String   @id @default(cuid())
+  userEmail   String?
+  responses   Json     // Store key-value pairs of the user's responses
+  
+  createdAt   DateTime @default(now())
+}

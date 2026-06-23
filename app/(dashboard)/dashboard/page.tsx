@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 <>
                     {/* Standard User Flat History Table */}
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <UserValuationHistory valuations={valuations} />
+                        <UserValuationHistory valuations={valuations} isDashboard={true} />
                     </div>
                 </>
             )}

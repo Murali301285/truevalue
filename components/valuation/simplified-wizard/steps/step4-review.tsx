@@ -133,42 +133,41 @@ export function Step4Review({ onPaymentSuccess, industries }: { onPaymentSuccess
             ev = 0; 
         }
 
+        const buildValuationPayload = () => ({
+            companyName: values.companyName || "Draft Valuation",
+            industry: values.sector || "Other",
+            legalStructure: values.legalStructure || "SME",
+            revenue: cleanNumber(values.revenue),
+            ebitda: cleanNumber(values.ebitda),
+            pat: 0,
+            totalAssets: cleanNumber(values.totalAssets),
+            totalLiabilities: cleanNumber(values.totalLiabilities),
+            yearsInOperation: (values.age === "0-3" ? 2 : values.age === "3-7" ? 5 : 10),
+            purpose: "Preliminary Estimate",
+            estimatedValue: isNaN(ev) ? 0 : ev,
+        });
+
         try {
-            // 1. Save Valuation Draft
-            const result = await saveValuation({
-                companyName: values.companyName || "Draft Valuation",
-                industry: values.sector || "Other",
-                legalStructure: values.legalStructure || "SME",
-                revenue: cleanNumber(values.revenue),
-                ebitda: cleanNumber(values.ebitda),
-                pat: 0,
-                totalAssets: cleanNumber(values.totalAssets),
-                totalLiabilities: cleanNumber(values.totalLiabilities),
-                yearsInOperation: (values.age === "0-3" ? 2 : values.age === "3-7" ? 5 : 10),
-                purpose: "Preliminary Estimate",
-                estimatedValue: isNaN(ev) ? 0 : ev,
-            });
-
-            if (!result.success || !result.id) {
-                toast({ title: "Error", description: "Failed to save valuation data.", variant: "destructive" });
-                setIsProcessing(false);
-                return;
-            }
-
-            // 1.5 Handle 100% Discount Bypass
+            // 1. Handle 100% Discount Bypass
             if (finalPrice <= 0) {
+                const result = await saveValuation(buildValuationPayload());
+                if (!result.success || !result.id) {
+                    toast({ title: "Error", description: "Failed to generate report.", variant: "destructive" });
+                    setIsProcessing(false);
+                    return;
+                }
                 toast({ title: "Success", description: "Free plan claimed! Generating report..." });
                 onPaymentSuccess(result.id as string, ev);
                 return;
             }
 
-            // 2. Create Razorpay Order
+            // 2. Create Razorpay Order (Do not save valuation yet!)
             const res = await fetch("/api/payment/create-order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ 
                     amount: finalPrice, 
-                    receipt: result.id,
+                    receipt: "temp_" + Date.now().toString(),
                     offerId: appliedOffer?.offerId 
                 }),
             });
@@ -202,9 +201,6 @@ export function Step4Review({ onPaymentSuccess, industries }: { onPaymentSuccess
                                     razorpay_order_id: response.razorpay_order_id,
                                     razorpay_payment_id: response.razorpay_payment_id,
                                     razorpay_signature: response.razorpay_signature,
-                                    amount: finalPrice,
-                                    offerId: appliedOffer?.offerId,
-                                    planName: "Express"
                                 }),
                             });
                             
@@ -212,6 +208,13 @@ export function Step4Review({ onPaymentSuccess, industries }: { onPaymentSuccess
                             
                             if (verifyData.success) {
                                 toast({ title: "Success", description: "Payment successful! Generating report..." });
+                                // Generate Valuation ONLY after successful payment verification
+                                const result = await saveValuation(buildValuationPayload());
+                                if (!result.success || !result.id) {
+                                    toast({ title: "Error", description: "Payment succeeded but report generation failed. Contact support.", variant: "destructive" });
+                                    setIsProcessing(false);
+                                    return;
+                                }
                                 onPaymentSuccess(result.id as string, ev);
                             } else {
                                 toast({ title: "Verification Failed", description: "Payment could not be verified securely.", variant: "destructive" });

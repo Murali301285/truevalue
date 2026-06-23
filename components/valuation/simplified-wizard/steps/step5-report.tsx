@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { SimplifiedValuationFormData } from "../schema";
 import { calculateAdvancedValuation } from "@/lib/valuationMath";
+import FeedbackModal from "@/components/feedback/FeedbackModal";
 
 export function Step5Report({ valuationId, industries }: { valuationId: string | null, industries: any[] }) {
     const { getValues } = useFormContext<SimplifiedValuationFormData>();
@@ -126,8 +127,9 @@ export function Step5Report({ valuationId, industries }: { valuationId: string |
                 </div>
             </div>
 
-            {/* Back button */}
-            <div className="pt-4 text-center">
+            {/* Footer Buttons */}
+            <div className="pt-8 flex flex-col items-center justify-center gap-6">
+                <FeedbackModal />
                 <a href="/dashboard" className="text-sm font-medium text-gray-500 hover:text-brand-red inline-flex items-center justify-center gap-2 transition-colors">
                     <ArrowLeft className="w-4 h-4" /> Back to Dashboard
                 </a>

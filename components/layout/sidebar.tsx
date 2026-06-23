@@ -19,7 +19,8 @@ import {
     Calculator,
     Percent,
     CreditCard,
-    Tag
+    Tag,
+    MessageSquare
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -96,6 +97,8 @@ export function Sidebar({ className }: SidebarProps) {
                             <NavLink href="/config/ai-model" icon={<Calculator className="w-4 h-4" />} label="AI Model" collapsed={false} active={pathname.includes("/config/ai-model")} />
                             <NavLink href="/config/base-multiplier" icon={<Percent className="w-4 h-4" />} label="Base Multiplier" collapsed={false} active={pathname.includes("/config/base-multiplier")} />
                             <NavLink href="/config/valuation-factors" icon={<Calculator className="w-4 h-4" />} label="Valuation Factors" collapsed={false} active={pathname.includes("/config/valuation-factors")} />
+                            <NavLink href="/admin/feedback-config" icon={<Settings className="w-4 h-4" />} label="Feedback Config" collapsed={false} active={pathname.includes("/admin/feedback-config")} />
+                            <NavLink href="/admin/feedbacks" icon={<MessageSquare className="w-4 h-4" />} label="User Feedbacks" collapsed={false} active={pathname.includes("/admin/feedbacks")} />
                         </CollapsibleContent>
                     </Collapsible>
                 ) : null}
